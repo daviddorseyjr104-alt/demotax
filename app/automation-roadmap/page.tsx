@@ -19,7 +19,7 @@ const TARGET_FLOW = [
   { label: 'PPT Deck Generated', sub: 'Structure-specific outline, instant' },
   { label: 'Banker One-Pager', sub: 'Print-ready PDF in one click' },
   { label: 'HubSpot Auto-Log', sub: 'Notes + task pushed to CRM' },
-  { label: 'Move to Next Deal', sub: '40 open cases, always current' },
+  { label: 'Move to Next Deal', sub: 'Full pipeline, always current' },
 ];
 
 const phases = [
@@ -116,22 +116,27 @@ export default function AutomationRoadmapPage() {
         <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '1.25rem' }}>
           Current vs. Target State
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', gap: '1.5rem', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 56px 1fr', gap: '1rem', alignItems: 'start' }}>
           {/* Current */}
           <div>
-            <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--red)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--red)' }} />
+            <div style={{ fontSize: '0.6375rem', fontWeight: 700, color: 'var(--red)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--red)', flexShrink: 0 }} />
               Current — Manual
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
               {CURRENT_FLOW.map((step, i) => (
                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
-                  <div className="flow-step manual">
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>{step.label}</div>
-                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>{step.sub}</div>
+                  <div style={{
+                    padding: '0.625rem 0.875rem',
+                    backgroundColor: 'rgba(239,68,68,0.06)',
+                    border: '1px solid rgba(239,68,68,0.2)',
+                    borderRadius: '0.4rem',
+                  }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--red)' }}>{step.label}</div>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '0.2rem', lineHeight: 1.4 }}>{step.sub}</div>
                   </div>
                   {i < CURRENT_FLOW.length - 1 && (
-                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', lineHeight: 1, padding: '0.2rem 0' }}>↓</div>
+                    <div style={{ textAlign: 'center', color: 'rgba(239,68,68,0.35)', fontSize: '0.8rem', padding: '0.2rem 0', lineHeight: 1 }}>↓</div>
                   )}
                 </div>
               ))}
@@ -139,28 +144,31 @@ export default function AutomationRoadmapPage() {
           </div>
 
           {/* Center arrow */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', paddingTop: '2.5rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.375rem' }}>
-              <div style={{ fontSize: '1.625rem', color: 'var(--gold)', lineHeight: 1 }}>→</div>
-              <div style={{ fontSize: '0.55rem', fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'center' }}>Platform<br />Upgrade</div>
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', paddingTop: '3.5rem', gap: '0.25rem' }}>
+            <div style={{ fontSize: '1.25rem', color: 'var(--gold)', lineHeight: 1 }}>→</div>
+            <div style={{ fontSize: '0.5rem', fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.06em', textAlign: 'center', lineHeight: 1.4 }}>Platform<br />Upgrade</div>
           </div>
 
           {/* Target */}
           <div>
-            <div style={{ fontSize: '0.6875rem', fontWeight: 700, color: 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--success)' }} />
+            <div style={{ fontSize: '0.6375rem', fontWeight: 700, color: 'var(--success)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--success)', flexShrink: 0 }} />
               Target State — Automated
             </div>
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
               {TARGET_FLOW.map((step, i) => (
                 <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'stretch' }}>
-                  <div className="flow-step auto">
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600 }}>{step.label}</div>
-                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>{step.sub}</div>
+                  <div style={{
+                    padding: '0.625rem 0.875rem',
+                    backgroundColor: 'rgba(52,211,153,0.06)',
+                    border: '1px solid rgba(52,211,153,0.2)',
+                    borderRadius: '0.4rem',
+                  }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--success)' }}>{step.label}</div>
+                    <div style={{ fontSize: '0.6875rem', color: 'var(--text-muted)', marginTop: '0.2rem', lineHeight: 1.4 }}>{step.sub}</div>
                   </div>
                   {i < TARGET_FLOW.length - 1 && (
-                    <div style={{ textAlign: 'center', color: 'var(--success)', fontSize: '0.9rem', lineHeight: 1, padding: '0.2rem 0', opacity: 0.55 }}>↓</div>
+                    <div style={{ textAlign: 'center', color: 'rgba(52,211,153,0.35)', fontSize: '0.8rem', padding: '0.2rem 0', lineHeight: 1 }}>↓</div>
                   )}
                 </div>
               ))}
@@ -289,7 +297,7 @@ export default function AutomationRoadmapPage() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.375rem' }}>
               {[
                 { label: 'Phase 1', status: 'Complete', color: 'var(--success)' },
-                { label: 'Phase 2', status: 'In Progress', color: 'var(--gold)' },
+                { label: 'Phase 2', status: 'Complete', color: 'var(--success)' },
                 { label: 'Phase 3', status: 'Complete', color: 'var(--success)' },
               ].map((row) => (
                 <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
