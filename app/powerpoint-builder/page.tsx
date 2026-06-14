@@ -1,23 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { logActivity, incrementStat } from '../../lib/activity';
 
 type Form = {
-  prospectName: string; audience: string; txSize: string; goal: string; tone: string;
+  prospectName: string; audience: string; txSize: string; goal: string; tone: string; structure: string;
 };
 
 const init: Form = {
-  prospectName: 'Robert Chen', audience: 'Business Owner', txSize: '$92M',
-  goal: 'Client proposal', tone: 'Premium',
+  prospectName: '', audience: 'Investment Banker', txSize: '',
+  goal: 'Referral partner presentation', tone: 'Premium', structure: 'LLC (S-Corp)',
 };
 
 type Slide = { title: string; bullets: string[]; speakerNote: string };
+
+const STRUCTURE_NOTES: Record<string, string> = {
+  'LLC (Partnership)': 'pass-through taxation — §751 hot asset analysis required for ordinary income separation',
+  'LLC (S-Corp)': 'shareholder-level taxation — built-in gains period and basis analysis required',
+  'Real Estate': '§1250 recapture at 25% rate — 1031 exchange deferral may be available if structured pre-close',
+  'C-Corporation': 'double taxation risk on asset sales — model both asset and stock sale structures before presenting',
+  'Securities / IP': 'QSBS §1202 exclusion may apply — confirm holding period and issuer eligibility with counsel',
+};
 
 function buildSlides(f: Form): Slide[] {
   const name = f.prospectName || '[Prospect]';
   const aud = f.audience;
   const size = f.txSize || '[Transaction Size]';
+  const structNote = STRUCTURE_NOTES[f.structure] ?? 'review applicable tax treatment with qualified advisor';
   const isReferral = aud === 'Real Estate Broker' || aud === 'Investment Banker' || aud === 'CPA';
   const recip = isReferral ? `your clients` : name;
   const toneNote = f.tone === 'Technical' ? 'Quantitative and process-focused'
@@ -50,11 +59,11 @@ function buildSlides(f: Form): Slide[] {
       title: 'Estimated Tax Exposure Challenge',
       bullets: [
         `Federal and state capital gains exposure on gross gain`,
-        `Potential ordinary income / depreciation recapture`,
+        `${f.structure} specific: ${structNote}`,
         `Effective tax rate as a % of gross proceeds`,
         `What after-tax proceeds look like without structured planning`,
       ],
-      speakerNote: `This slide quantifies the "why." Make the numbers concrete. Use the AI Deal Review output to populate actual figures. Emphasize that this is an estimate requiring professional review — not a final calculation.`,
+      speakerNote: `This slide quantifies the "why." Make the numbers concrete. Use the Deal Calculator output to populate actual figures for this ${f.structure} transaction. Emphasize that this is an estimate requiring professional review — not a final calculation.`,
     },
     {
       title: 'Why Timing Matters',
@@ -109,12 +118,13 @@ function buildSlides(f: Form): Slide[] {
   ];
 }
 
-function downloadDeck(slides: Slide[], f: Form) {
+function downloadTxt(slides: Slide[], f: Form) {
   const header = [
     `TAX STRATEGY ADVISORY — PRESENTATION OUTLINE`,
     `${'═'.repeat(60)}`,
     `Client / Audience: ${f.prospectName} · ${f.audience}`,
     `Transaction: ${f.txSize} · ${f.goal}`,
+    `Deal Structure: ${f.structure}`,
     `Tone: ${f.tone}`,
     `Generated: ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}`,
     `Status: Internal Review Only`,
@@ -147,13 +157,53 @@ function downloadDeck(slides: Slide[], f: Form) {
   URL.revokeObjectURL(url);
 }
 
+async function downloadPptx(slides: Slide[], f: Form, setDownloading: (v: boolean) => void) {
+  setDownloading(true);
+  try {
+    const res = await fetch('/api/generate-pptx', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ slides, form: f }),
+    });
+    if (!res.ok) throw new Error('PPTX generation failed');
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${(f.prospectName || 'deck').replace(/\s+/g, '-').toLowerCase()}-tax-advisory.pptx`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  } finally {
+    setDownloading(false);
+  }
+}
+
 export default function PowerPointBuilderPage() {
   const [form, setForm] = useState<Form>(init);
   const [generating, setGenerating] = useState(false);
   const [slides, setSlides] = useState<Slide[] | null>(null);
   const [showNotes, setShowNotes] = useState(false);
+  const [downloading, setDownloading] = useState(false);
 
   const set = (k: keyof Form, v: string) => { setForm((f) => ({ ...f, [k]: v })); setSlides(null); };
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('tsos-deck-prefill');
+      if (raw) {
+        const data = JSON.parse(raw) as { prospectName?: string; structure?: string; txSize?: string };
+        localStorage.removeItem('tsos-deck-prefill');
+        setForm((f) => ({
+          ...f,
+          ...(data.prospectName ? { prospectName: data.prospectName } : {}),
+          ...(data.structure ? { structure: data.structure } : {}),
+          ...(data.txSize ? { txSize: data.txSize } : {}),
+        }));
+      }
+    } catch { /* ignore parse errors */ }
+  }, []);
 
   const generate = () => {
     setGenerating(true);
@@ -162,7 +212,7 @@ export default function PowerPointBuilderPage() {
       const built = buildSlides(form);
       setSlides(built);
       setGenerating(false);
-      logActivity(`PowerPoint outline generated — ${form.prospectName}, ${form.txSize} ${form.audience} deck (${form.goal})`, 'var(--purple)');
+      logActivity(`PowerPoint outline generated — ${form.prospectName}, ${form.txSize} ${form.structure} deck for ${form.audience} (${form.goal})`, 'var(--purple)');
       incrementStat('decks');
     }, 2000);
   };
@@ -186,6 +236,12 @@ export default function PowerPointBuilderPage() {
             <div>
               <label className="field-label">Prospect / Client Name</label>
               <input className="input-field" placeholder="Robert Chen" value={form.prospectName} onChange={(e) => set('prospectName', e.target.value)} />
+            </div>
+            <div>
+              <label className="field-label">Deal Structure</label>
+              <select className="input-field" value={form.structure} onChange={(e) => set('structure', e.target.value)}>
+                {['LLC (Partnership)', 'LLC (S-Corp)', 'Real Estate', 'C-Corporation', 'Securities / IP'].map((v) => <option key={v}>{v}</option>)}
+              </select>
             </div>
             <div>
               <label className="field-label">Audience Type</label>
@@ -216,10 +272,20 @@ export default function PowerPointBuilderPage() {
             </button>
             {slides && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                <button
+                  className="btn-gold"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                  onClick={() => downloadPptx(slides, form, setDownloading)}
+                  disabled={downloading}
+                >
+                  {downloading
+                    ? <><div className="spinner" style={{ width: '13px', height: '13px', margin: 0 }} />Generating .pptx...</>
+                    : <>⬇ Download Real .pptx</>}
+                </button>
                 <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => setShowNotes((v) => !v)}>
                   {showNotes ? 'Hide Speaker Notes' : 'Show Speaker Notes'}
                 </button>
-                <button className="btn-secondary" style={{ width: '100%', justifyContent: 'center' }} onClick={() => downloadDeck(slides, form)}>
+                <button className="btn-ghost" style={{ width: '100%', justifyContent: 'center', fontSize: '0.72rem' }} onClick={() => downloadTxt(slides, form)}>
                   Download Outline (.txt)
                 </button>
               </div>
@@ -244,8 +310,9 @@ export default function PowerPointBuilderPage() {
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                   <span className="badge badge-gold">8 Slides Ready</span>
+                  <span className="badge badge-gray">{form.structure}</span>
                   <span className="badge badge-gray">{form.tone} tone</span>
-                  <button className="btn-ghost" style={{ fontSize: '0.7rem' }} onClick={() => downloadDeck(slides, form)}>Download</button>
+                  <button className="btn-ghost" style={{ fontSize: '0.7rem' }} onClick={() => downloadPptx(slides, form, setDownloading)} disabled={downloading}>⬇ .pptx</button>
                 </div>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.875rem' }}>

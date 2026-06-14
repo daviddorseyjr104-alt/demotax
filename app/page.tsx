@@ -2,36 +2,32 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { getActivity, getStat, type ActivityEntry } from '../lib/activity';
+import { getActivity, clearActivity, type ActivityEntry } from '../lib/activity';
+import { createClient } from '@/lib/supabase/client';
 
-const BASE_STATS = [
-  { label: 'Active Transactions', value: 14, statKey: '', sub: '4 closing this quarter', color: 'var(--gold)', fmt: (n: number) => String(n) },
-  { label: 'Tax Exposure Reviewed', value: 318.4, statKey: '', sub: 'Estimated aggregate', color: 'var(--purple)', fmt: (n: number) => `$${n.toFixed(1)}M` },
-  { label: 'Est. Transaction Value', value: 1.74, statKey: '', sub: 'Across active pipeline', color: 'var(--gold)', fmt: (n: number) => `$${n.toFixed(2)}B` },
-  { label: 'Referral Partners', value: 63, statKey: '', sub: '18 active introducers', color: 'var(--blue)', fmt: (n: number) => String(n) },
-  { label: 'Executive Briefs Generated', value: 37, statKey: 'briefs', sub: 'Last 90 days', color: 'var(--success)', fmt: (n: number) => String(n) },
-  { label: 'Follow-Ups Due', value: 21, statKey: '', sub: '6 overdue', color: 'var(--warning)', fmt: (n: number) => String(n) },
-  { label: 'Est. Hours Saved', value: 142, statKey: 'memos', sub: 'Via workflow automation', color: 'var(--success)', fmt: (n: number, memos: number) => String(n + memos * 7) },
-  { label: 'Proposals Drafted', value: 19, statKey: 'decks', sub: '8 pending response', color: 'var(--blue)', fmt: (n: number) => String(n) },
-];
+type DbLead = {
+  id: string; name: string; company: string; category: string;
+  tx_range: string; deal_type: string; status: string; priority: number; next_action: string;
+};
 
-const priorities = [
-  { title: 'Follow up with Westbridge Realty Advisors', status: 'Due Today', statusColor: 'var(--red)', action: 'Send Executive Brief', href: '/executive-briefs', note: 'Sarah Kaplan — $40M–$120M portfolio' },
-  { title: 'Prepare proposal outline for Oak Capital', status: 'High Priority', statusColor: 'var(--warning)', action: 'Generate PowerPoint', href: '/powerpoint-builder', note: 'PE Partner — $185M business sale' },
-  { title: 'Review $92M business sale intake', status: 'New Intake', statusColor: 'var(--blue)', action: 'Run AI Deal Review', href: '/ai-deal-review', note: 'Robert Chen — Chen Manufacturing Group' },
-  { title: 'Send educational email to IB list', status: 'Marketing', statusColor: 'var(--purple)', action: 'Draft Campaign', href: '/marketing-studio', note: 'Investment banker audience — 14 contacts' },
-];
+function leadToAction(lead: DbLead) {
+  const isUrgent = lead.priority >= 90;
+  const isHigh = lead.priority >= 80;
+  let action = 'Run Calculator'; let href = '/deal-calculator';
+  if (['Investment Banker', 'PE Partner'].includes(lead.category)) { action = 'Build PowerPoint'; href = '/powerpoint-builder'; }
+  else if (lead.category === 'CPA') { action = 'Generate Brief'; href = '/executive-briefs'; }
+  else if (lead.category === 'Real Estate Broker') { action = 'Build PowerPoint'; href = '/powerpoint-builder'; }
+  return {
+    title: lead.next_action || `Follow up with ${lead.name}`,
+    status: isUrgent ? 'High Priority' : isHigh ? 'Due This Week' : 'Active',
+    statusColor: isUrgent ? 'var(--red)' : isHigh ? 'var(--warning)' : 'var(--blue)',
+    action, href,
+    note: `${lead.category}${lead.company ? ' · ' + lead.company : ''}${lead.tx_range ? ' · ' + lead.tx_range : ''}`,
+  };
+}
 
-const SEED_ACTIVITY: ActivityEntry[] = [
-  { dot: 'var(--gold)', text: 'Executive brief generated for Robert Chen transaction ($92M manufacturing)', ts: Date.now() - 120000 },
-  { dot: 'var(--purple)', text: 'Referral email drafted for PE partner audience — 8 recipients', ts: Date.now() - 3600000 },
-  { dot: 'var(--success)', text: 'Excel model standardized for Nguyen Properties business sale workflow', ts: Date.now() - 7200000 },
-  { dot: 'var(--blue)', text: 'Follow-up task created for Beverly Hills broker — Westbridge Realty', ts: Date.now() - 14400000 },
-  { dot: 'var(--gold)', text: 'Client intake summarized for $120M real estate portfolio — L. Bennett', ts: Date.now() - 28800000 },
-];
-
-const manualFlow = ['Excel', 'Claude Prompt', 'Manual Edits', 'PowerPoint', 'Email', 'Follow-Up Notes'];
-const autoFlow = ['Intake Form', 'AI Deal Review', 'Executive Brief', 'PowerPoint Outline', 'Referral Email', 'CRM Follow-Up'];
+const manualFlow = ['15-min Zoom Call', 'Manual Notes', 'Open Excel (per type)', 'Build PPT Manually', 'Email One-Pager', 'CRM Entry'];
+const autoFlow = ['Zoom Transcript', 'AI Extracts 6–7 Fields', 'Asset Calculator Auto-Fills', 'PPT Deck Generated', 'One-Page PDF', 'Auto CRM Log'];
 
 function timeAgo(ts: number): string {
   const diff = Date.now() - ts;
@@ -42,44 +38,83 @@ function timeAgo(ts: number): string {
 }
 
 export default function CEODashboard() {
-  const [activity, setActivity] = useState<ActivityEntry[]>(SEED_ACTIVITY);
-  const [memoCount, setMemoCount] = useState(0);
-  const [deckCount, setDeckCount] = useState(0);
+  const [activity, setActivity] = useState<ActivityEntry[]>([]);
+  const [leadCount, setLeadCount] = useState<number>(0);
+  const [meetingCount, setMeetingCount] = useState<number>(0);
+  const [dealCount, setDealCount] = useState<number>(0);
+  const [followUpCount, setFollowUpCount] = useState<number>(0);
+  const [dbPriorities, setDbPriorities] = useState<DbLead[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const real = getActivity();
-    setActivity(real.length > 0 ? [...real, ...SEED_ACTIVITY].slice(0, 8) : SEED_ACTIVITY);
-    setMemoCount(parseInt(localStorage.getItem('tsos-stat-memos') ?? '0'));
-    setDeckCount(parseInt(localStorage.getItem('tsos-stat-decks') ?? '0'));
+    setActivity(real);
+
+    async function loadLiveData() {
+      try {
+        const supabase = createClient();
+
+        const [
+          { count: lc },
+          { count: mc },
+          { count: dc },
+          { count: fc },
+          { data: top },
+        ] = await Promise.all([
+          supabase.from('pipeline_leads').select('*', { count: 'exact', head: true }),
+          supabase.from('meetings').select('*', { count: 'exact', head: true }),
+          supabase.from('deals').select('*', { count: 'exact', head: true }),
+          supabase.from('pipeline_leads').select('*', { count: 'exact', head: true })
+            .in('status', ['Contacted', 'Meeting Scheduled', 'Executive Brief Sent', 'Proposal Sent', 'Active Opportunity']),
+          supabase.from('pipeline_leads')
+            .select('id, name, company, category, tx_range, deal_type, status, priority, next_action')
+            .order('priority', { ascending: false })
+            .limit(4),
+        ]);
+
+        if (lc !== null) setLeadCount(lc);
+        if (mc !== null) setMeetingCount(mc);
+        if (dc !== null) setDealCount(dc);
+        if (fc !== null) setFollowUpCount(fc);
+        if (top && top.length > 0) setDbPriorities(top as DbLead[]);
+      } catch {}
+      setLoading(false);
+    }
+    loadLiveData();
   }, []);
+
+  const stats = [
+    { label: 'Contacts in Pipeline', value: leadCount, sub: 'Referral partners & prospects', color: 'var(--gold)' },
+    { label: 'Active Follow-Ups', value: followUpCount, sub: 'Contacted through active opportunity', color: 'var(--warning)' },
+    { label: 'Deals Modeled', value: dealCount, sub: 'Saved in Deal Calculator', color: 'var(--purple)' },
+    { label: 'Meeting Sessions', value: meetingCount, sub: 'Processed & saved to history', color: 'var(--success)' },
+  ];
 
   return (
     <div style={{ maxWidth: '1200px' }}>
       <div style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>
-            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: '0.5rem' }}>CEO Dashboard</h1>
-            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', maxWidth: '600px', lineHeight: 1.6 }}>Real-time overview of transaction activity, referral relationships, and automation impact.</p>
+            <h1 style={{ fontSize: '1.75rem', fontWeight: 800, color: 'var(--text-primary)', letterSpacing: '-0.03em', lineHeight: 1.1, marginBottom: '0.5rem' }}>Operations Dashboard</h1>
+            <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', maxWidth: '600px', lineHeight: 1.6 }}>Real-time overview of your pipeline, meetings, and deal activity.</p>
           </div>
           <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
-            <span className="internal-tag">Internal Review Only</span>
-            <span className="internal-tag">Last updated today</span>
+            <span className="internal-tag">Internal Use Only</span>
           </div>
         </div>
       </div>
 
+      {/* Live Stats */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.875rem', marginBottom: '1.75rem' }}>
-        {BASE_STATS.map((s) => {
-          const extra = s.statKey === 'memos' ? memoCount : s.statKey === 'decks' ? deckCount : s.statKey === 'briefs' ? memoCount : 0;
-          const displayed = s.fmt(s.value + extra, memoCount);
-          return (
-            <div key={s.label} className="card-sm" style={{ borderLeft: `3px solid ${s.color}` }}>
-              <div className="stat-label" style={{ marginBottom: '0.5rem' }}>{s.label}</div>
-              <div className="stat-value" style={{ fontSize: '1.625rem', color: s.color }}>{displayed}</div>
-              <div style={{ fontSize: '0.6625rem', color: 'var(--text-muted)', marginTop: '0.375rem' }}>{s.sub}</div>
+        {stats.map((s) => (
+          <div key={s.label} className="card-sm" style={{ borderLeft: `3px solid ${s.color}` }}>
+            <div className="stat-label" style={{ marginBottom: '0.5rem' }}>{s.label}</div>
+            <div className="stat-value" style={{ fontSize: '1.625rem', color: s.color }}>
+              {loading ? <span style={{ opacity: 0.3 }}>—</span> : s.value}
             </div>
-          );
-        })}
+            <div style={{ fontSize: '0.6625rem', color: 'var(--text-muted)', marginTop: '0.375rem' }}>{s.sub}</div>
+          </div>
+        ))}
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
@@ -87,43 +122,81 @@ export default function CEODashboard() {
         <div className="card">
           <div style={{ marginBottom: '1.125rem' }}>
             <div className="section-title" style={{ fontSize: '1rem' }}>Today&apos;s Priority Actions</div>
-            <div className="section-subtitle">Highest-impact tasks for today</div>
+            <div className="section-subtitle">Top contacts by priority score</div>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-            {priorities.map((p, i) => (
-              <div key={i} style={{ padding: '0.875rem 1rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>{p.title}</span>
-                    <span style={{ fontSize: '0.6rem', fontWeight: 700, color: p.statusColor, background: `${p.statusColor}15`, border: `1px solid ${p.statusColor}30`, borderRadius: '999px', padding: '0.15rem 0.5rem', whiteSpace: 'nowrap' }}>{p.status}</span>
+          {dbPriorities.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              {dbPriorities.map(leadToAction).map((p, i) => (
+                <div key={i} style={{ padding: '0.875rem 1rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
+                      <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>{p.title}</span>
+                      <span style={{ fontSize: '0.6rem', fontWeight: 700, color: p.statusColor, background: `${p.statusColor}15`, border: `1px solid ${p.statusColor}30`, borderRadius: '999px', padding: '0.15rem 0.5rem', whiteSpace: 'nowrap' }}>{p.status}</span>
+                    </div>
+                    <div style={{ fontSize: '0.7125rem', color: 'var(--text-muted)' }}>{p.note}</div>
                   </div>
-                  <div style={{ fontSize: '0.7125rem', color: 'var(--text-muted)' }}>{p.note}</div>
+                  <Link href={p.href} style={{ textDecoration: 'none', flexShrink: 0 }}>
+                    <button className="btn-gold" style={{ padding: '0.4rem 0.875rem', fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>{p.action}</button>
+                  </Link>
                 </div>
-                <Link href={p.href} style={{ textDecoration: 'none', flexShrink: 0 }}>
-                  <button className="btn-gold" style={{ padding: '0.4rem 0.875rem', fontSize: '0.6875rem', whiteSpace: 'nowrap' }}>{p.action}</button>
-                </Link>
+              ))}
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)' }}>
+              <div style={{ marginBottom: '0.75rem', opacity: 0.25 }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.5" style={{ margin: '0 auto' }}>
+                  <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+                  <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                </svg>
               </div>
-            ))}
-          </div>
+              <div style={{ fontSize: '0.8125rem', marginBottom: '0.5rem' }}>No contacts in your pipeline yet</div>
+              <Link href="/referral-pipeline" style={{ textDecoration: 'none' }}>
+                <button className="btn-gold" style={{ fontSize: '0.75rem', padding: '0.4rem 1rem' }}>Add First Contact →</button>
+              </Link>
+            </div>
+          )}
         </div>
 
         {/* Activity Feed */}
         <div className="card">
-          <div style={{ marginBottom: '1.125rem' }}>
-            <div className="section-title" style={{ fontSize: '1rem' }}>Recent Automation Activity</div>
-            <div className="section-subtitle">Platform-generated actions and outputs — updates as you use the platform</div>
+          <div style={{ marginBottom: '1.125rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+            <div>
+              <div className="section-title" style={{ fontSize: '1rem' }}>Recent Activity</div>
+              <div className="section-subtitle">Platform actions — updates as you use each tool</div>
+            </div>
+            {activity.length > 0 && (
+              <button
+                className="btn-ghost"
+                style={{ fontSize: '0.65rem', padding: '0.2rem 0.5rem', opacity: 0.6 }}
+                onClick={() => { clearActivity(); setActivity([]); }}
+              >
+                Clear
+              </button>
+            )}
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
-            {activity.slice(0, 7).map((item, i) => (
-              <div key={i} style={{ display: 'flex', gap: '0.875rem', alignItems: 'flex-start', padding: '0.75rem 0', borderBottom: i < Math.min(activity.length, 7) - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
-                <div style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: item.dot, marginTop: '5px', flexShrink: 0 }} />
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>{item.text}</div>
-                  <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>{timeAgo(item.ts)}</div>
+          {activity.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0' }}>
+              {activity.slice(0, 7).map((item, i) => (
+                <div key={i} style={{ display: 'flex', gap: '0.875rem', alignItems: 'flex-start', padding: '0.75rem 0', borderBottom: i < Math.min(activity.length, 7) - 1 ? '1px solid var(--border-subtle)' : 'none' }}>
+                  <div style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: item.dot, marginTop: '5px', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>{item.text}</div>
+                    <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', marginTop: '0.125rem' }}>{timeAgo(item.ts)}</div>
+                  </div>
                 </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)' }}>
+              <div style={{ marginBottom: '0.75rem', opacity: 0.25 }}>
+                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1.5" style={{ margin: '0 auto' }}>
+                  <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+                </svg>
               </div>
-            ))}
-          </div>
+              <div style={{ fontSize: '0.8125rem' }}>No activity yet</div>
+              <div style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>Use any tool to see your workflow log here</div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -136,7 +209,7 @@ export default function CEODashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
           <div style={{ padding: '1.125rem', backgroundColor: 'var(--bg-input)', borderRadius: '0.625rem', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: '0.6375rem', fontWeight: 700, color: 'var(--red)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--red)', display: 'inline-block' }} />Current: Manual Process
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--red)', display: 'inline-block' }} />Before: Manual Process
             </div>
             <div className="flow-wrap">
               {manualFlow.map((step, i) => (
@@ -146,11 +219,11 @@ export default function CEODashboard() {
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: '0.875rem', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>Each step requires manual effort, copy-pasting, and context-switching between Claude and your documents.</div>
+            <div style={{ marginTop: '0.875rem', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>After a 15-minute Zoom call, each step requires manual effort: transcribing, opening the right Excel file (5 different calculators), building the PPT, and emailing a one-pager — totaling 4–6 hours per deal.</div>
           </div>
           <div style={{ padding: '1.125rem', backgroundColor: 'var(--bg-input)', borderRadius: '0.625rem', border: '1px solid var(--gold-border)' }}>
             <div style={{ fontSize: '0.6375rem', fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block' }} />Automated: Operations Platform
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--success)', display: 'inline-block' }} />After: Operations Platform
             </div>
             <div className="flow-wrap">
               {autoFlow.map((step, i) => (
@@ -160,14 +233,14 @@ export default function CEODashboard() {
                 </div>
               ))}
             </div>
-            <div style={{ marginTop: '0.875rem', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>Structured inputs flow into consistent, professional outputs. Every step is repeatable and takes minutes, not hours.</div>
+            <div style={{ marginTop: '0.875rem', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>The Zoom transcript feeds the correct asset calculator automatically. The PowerPoint deck and banker one-pager are ready before the next meeting — under 1 hour total.</div>
           </div>
         </div>
         <div style={{ marginTop: '1.25rem', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
           {[
-            { label: 'Proposal Creation', before: '4–6 hours', after: '< 30 minutes' },
-            { label: 'Referral Outreach', before: 'Hours per campaign', after: 'Minutes per audience' },
-            { label: 'Transaction Intake', before: 'Email back-and-forth', after: 'One structured form' },
+            { label: 'Presentation Prep', before: '6 hours per deck', after: 'Under 1 hour' },
+            { label: 'Post-Call Admin', before: '45 min manual entry', after: 'Auto-generated in minutes' },
+            { label: 'Banker One-Pager', before: 'Manual email + PDF', after: 'Auto-generated on submit' },
           ].map((item) => (
             <div key={item.label} style={{ padding: '0.875rem', backgroundColor: 'var(--bg-card)', borderRadius: '0.5rem', border: '1px solid var(--border)' }}>
               <div style={{ fontSize: '0.6625rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.5rem' }}>{item.label}</div>
@@ -184,10 +257,10 @@ export default function CEODashboard() {
       {/* Quick links */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
         {[
-          { label: 'AI Deal Review', desc: 'Run transaction analysis', href: '/ai-deal-review' },
-          { label: 'Executive Brief', desc: 'Generate client-ready memo', href: '/executive-briefs' },
-          { label: 'PowerPoint Outline', desc: 'Build deck from deal data', href: '/powerpoint-builder' },
-          { label: 'Marketing Studio', desc: 'Draft referral outreach', href: '/marketing-studio' },
+          { label: 'Deal Calculator', desc: '5 structure types — instant exposure', href: '/deal-calculator' },
+          { label: 'Meeting Notes', desc: 'Call notes → follow-up package', href: '/meeting-notes' },
+          { label: 'PowerPoint Builder', desc: 'Build deck from deal data', href: '/powerpoint-builder' },
+          { label: 'Referral Pipeline', desc: 'Track your referral contacts', href: '/referral-pipeline' },
         ].map((ql) => (
           <Link key={ql.href} href={ql.href} style={{ textDecoration: 'none' }}>
             <div className="card-sm card-hover" style={{ cursor: 'pointer', borderColor: 'var(--border)' }}>
@@ -199,7 +272,7 @@ export default function CEODashboard() {
       </div>
 
       <div className="disclaimer">
-        <strong style={{ color: 'var(--gold)' }}>Tax Strategy Operations Hub — Demo Environment.</strong>{' '}
+        <strong style={{ color: 'var(--gold)' }}>Important:</strong>{' '}
         This platform supports workflow automation and document preparation for advisory firms. It does not provide tax, legal, accounting, investment, or financial advice.
         All strategies and calculations must be reviewed by qualified professionals.
       </div>

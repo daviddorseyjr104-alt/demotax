@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { toast } from '@/components/Toast';
 
 type Form = {
   prospectType: string;
@@ -83,7 +84,7 @@ export default function ProposalGeneratorPage() {
     setOutput(null);
   };
 
-  const generate = () => setOutput(buildProposal(form));
+  const generate = () => { setOutput(buildProposal(form)); toast('Proposal draft generated'); };
 
   const tabs = ['Executive Summary', 'Value Proposition', 'Deck Outline', 'Talking Points', 'Discovery Qs'];
 
@@ -95,7 +96,7 @@ export default function ProposalGeneratorPage() {
       </div>
 
       <div className="disclaimer" style={{ marginBottom: '1.75rem' }}>
-        <strong style={{ color: 'var(--gold)' }}>For demonstration only.</strong>{' '}
+        <strong style={{ color: 'var(--gold)' }}>Important:</strong>{' '}
         This platform supports workflow automation and document preparation. It does not provide tax, legal, accounting,
         investment, or financial advice. All strategies must be reviewed by qualified professionals.
       </div>

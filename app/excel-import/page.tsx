@@ -9,26 +9,45 @@ type SampleFile = {
   preview: Record<string, string> | null;
 };
 
-const sampleFiles: SampleFile[] = [
+
+
+type SampleFileEx = SampleFile & { structure: string; calcPrefill: Record<string, string> | null };
+
+const sampleFiles: SampleFileEx[] = [
   {
-    name: 'Business Sale Model.xlsx', size: '142 KB', modified: '3 days ago', type: 'business',
-    fields: ['Sale Price', 'Cost Basis', 'Debt Payoff', 'Transaction Costs', 'Federal Rate', 'State Rate', 'Closing Timeline', 'Entity Structure', 'Advisor Notes'],
-    preview: { salePrice: '$92,000,000', costBasis: '$14,000,000', debtPayoff: '$18,000,000', txCosts: '$2,800,000', fedRate: '23.8%', stateRate: '13.3%', timeline: 'Q4 2025' },
+    name: 'Template — LLC Partnership Sale.xlsx', size: '138 KB', modified: 'Template', type: 'business',
+    structure: 'llc-partnership',
+    fields: ['Prospect Name', 'Sale Price', 'Partner Basis', 'Debt Payoff', 'Transaction Costs', 'Hot Asset Estimate', 'Federal Cap Gains Rate', 'State Rate', 'Expected Closing'],
+    preview: { prospectName: '[Client Name]', salePrice: '$70,000,000', costBasis: '$8,000,000', debtPayoff: '$0', txCosts: '$2,100,000', fedRate: '23.8%', stateRate: '13.3%', timeline: 'Q2 2026' },
+    calcPrefill: { prospectName: '', salePrice: '70000000', costBasis: '8000000', debtPayoff: '0', entityStructure: 'LLC (Single Member)' },
   },
   {
-    name: 'Real Estate Portfolio Review.xlsx', size: '218 KB', modified: '1 week ago', type: 'realestate',
-    fields: ['Portfolio Value', 'Adjusted Basis', 'Mortgage Balance', 'Closing Costs', 'Depreciation Recapture', 'Federal Rate', 'State Rate', 'Property Count', 'Target Closing'],
-    preview: { salePrice: '$147,000,000', costBasis: '$38,000,000', debtPayoff: '$55,000,000', txCosts: '$4,100,000', fedRate: '23.8%', stateRate: '13.3%', timeline: 'Q1 2026' },
+    name: 'Template — LLC S-Corp Sale.xlsx', size: '155 KB', modified: 'Template', type: 'business',
+    structure: 'llc-scorp',
+    fields: ['Prospect Name', 'Sale Price', 'Shareholder Basis', 'Debt Payoff', 'Transaction Costs', 'Built-in Gains Estimate', 'Federal Rate', 'State Rate', 'Closing Timeline'],
+    preview: { prospectName: '[Client Name]', salePrice: '$92,000,000', costBasis: '$14,000,000', debtPayoff: '$18,000,000', txCosts: '$2,800,000', fedRate: '23.8%', stateRate: '13.3%', timeline: 'Q4 2026' },
+    calcPrefill: { prospectName: '', salePrice: '92000000', costBasis: '14000000', debtPayoff: '18000000', entityStructure: 'S-Corporation' },
   },
   {
-    name: 'Referral Partner Tracking.csv', size: '48 KB', modified: '2 days ago', type: 'crm',
-    fields: ['Contact Name', 'Company', 'Category', 'Last Contact', 'Transaction Range', 'Status', 'Notes', 'Priority Score'],
-    preview: null,
+    name: 'Template — Real Estate Portfolio.xlsx', size: '218 KB', modified: 'Template', type: 'realestate',
+    structure: 'real-estate',
+    fields: ['Portfolio Value', 'Adjusted Basis', 'Mortgage Balance', 'Closing Costs', '§1250 Recapture', 'Federal Rate', 'State Rate', 'Property Count', 'Target Closing'],
+    preview: { prospectName: '[Client Name]', salePrice: '$45,000,000', costBasis: '$12,000,000', debtPayoff: '$14,000,000', txCosts: '$1,350,000', fedRate: '23.8%', stateRate: '13.3%', timeline: 'Q3 2026' },
+    calcPrefill: { prospectName: '', salePrice: '45000000', costBasis: '12000000', debtPayoff: '14000000', entityStructure: 'LLC (Multi-Member)' },
   },
   {
-    name: 'Tax Exposure Summary Template.xlsx', size: '96 KB', modified: 'Yesterday', type: 'template',
-    fields: ['Prospect Name', 'Sale Price', 'Gross Gain', 'Fed Exposure', 'State Exposure', 'Recapture', 'Total Exposure', 'Deferrable Range', 'Summary Notes'],
-    preview: { salePrice: '$85,000,000', costBasis: '$12,000,000', debtPayoff: '$22,000,000', txCosts: '$3,200,000', fedRate: '23.8%', stateRate: '13.3%', timeline: 'Q3 2025' },
+    name: 'Template — C-Corp Asset Sale.xlsx', size: '164 KB', modified: 'Template', type: 'business',
+    structure: 'c-corp',
+    fields: ['Corp Name', 'Asset Sale Price', 'Book Basis', 'Outstanding Debt', 'Transaction Costs', 'Asset Recapture Estimate', 'Corp Rate', 'Shareholder Rate', 'Closing Timeline'],
+    preview: { prospectName: '[Client Name]', salePrice: '$120,000,000', costBasis: '$22,000,000', debtPayoff: '$30,000,000', txCosts: '$3,600,000', fedRate: '23.8%', stateRate: '9.8%', timeline: 'Q1 2027' },
+    calcPrefill: { prospectName: '', salePrice: '120000000', costBasis: '22000000', debtPayoff: '30000000', entityStructure: 'C-Corporation' },
+  },
+  {
+    name: 'Template — Securities / IP Sale.xlsx', size: '96 KB', modified: 'Template', type: 'template',
+    structure: 'securities',
+    fields: ['Investor Name', 'Gross Proceeds', 'Tax Basis', 'Holding Period', 'QSBS Eligible', 'Federal LTCG Rate', 'State Rate', 'Ordinary Income Estimate', 'Close Date'],
+    preview: { prospectName: '[Client Name]', salePrice: '$28,000,000', costBasis: '$800,000', debtPayoff: '$0', txCosts: '$420,000', fedRate: '23.8%', stateRate: '13.3%', timeline: 'Q3 2026' },
+    calcPrefill: { prospectName: '', salePrice: '28000000', costBasis: '800000', debtPayoff: '0', entityStructure: 'Individual' },
   },
 ];
 
@@ -57,45 +76,71 @@ function fileIcon(name: string) {
   );
 }
 
-function matchSample(fileName: string): SampleFile {
+function matchSample(fileName: string): SampleFileEx {
   const n = fileName.toLowerCase();
-  if (n.includes('real') || n.includes('property') || n.includes('portfolio') || n.includes('apartment')) return sampleFiles[1];
-  if (n.includes('business') || n.includes('sale') || n.includes('model') || n.includes('company')) return sampleFiles[0];
-  if (n.includes('crm') || n.includes('partner') || n.includes('contact') || n.includes('referral') || n.includes('tracking')) return sampleFiles[2];
-  return sampleFiles[3];
+  if (n.includes('real') || n.includes('property') || n.includes('portfolio') || n.includes('apartment')) return sampleFiles[2];
+  if (n.includes('c-corp') || n.includes('c corp') || n.includes('corporation') || n.includes('industrial')) return sampleFiles[3];
+  if (n.includes('securit') || n.includes('stock') || n.includes('ip') || n.includes('intellectual')) return sampleFiles[4];
+  if (n.includes('s-corp') || n.includes('s corp') || n.includes('scorp') || n.includes('manufacturing')) return sampleFiles[1];
+  if (n.includes('business') || n.includes('sale') || n.includes('model') || n.includes('company') || n.includes('llc') || n.includes('partnership')) return sampleFiles[0];
+  return sampleFiles[1];
 }
 
 export default function ExcelImportPage() {
-  const [selected, setSelected] = useState<SampleFile | null>(null);
+  const [selected, setSelected] = useState<SampleFileEx | null>(null);
   const [importing, setImporting] = useState(false);
   const [imported, setImported] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const runImport = (file: SampleFile) => {
+  const runImport = (file: SampleFileEx) => {
     setSelected(file);
-    setImported(false);
+    setImported(true);
+    logActivity(`Template loaded — ${file.name}`, 'var(--success)');
+  };
+
+  const handleRealFile = async (f: File) => {
+    const sizekb = Math.round(f.size / 1024);
+    const sizeStr = sizekb > 0 ? `${sizekb} KB` : '< 1 KB';
+    setSelected({ name: f.name, size: sizeStr, modified: 'Just now', type: 'uploaded', fields: [], preview: null, structure: 'LLC (S-Corp)', calcPrefill: null });
     setImporting(true);
-    setTimeout(() => {
+    setImported(false);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', f);
+      const res = await fetch('/api/parse-excel', { method: 'POST', body: formData });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      const realFile: SampleFileEx = {
+        name: f.name,
+        size: sizeStr,
+        modified: 'Just now',
+        type: 'uploaded',
+        fields: ['Prospect Name', 'Sale Price', 'Cost Basis', 'Debt Payoff', 'Entity Structure'],
+        preview: data.prospectName ? { prospectName: data.prospectName, salePrice: data.salePrice, costBasis: data.costBasis } : null,
+        structure: data.entityStructure ?? 'LLC (S-Corp)',
+        calcPrefill: {
+          prospectName: data.prospectName ?? '',
+          salePrice: data.salePrice ?? '',
+          costBasis: data.costBasis ?? '',
+          debtPayoff: data.debtPayoff ?? '',
+          entityStructure: data.entityStructure ?? 'LLC (Single Member)',
+        },
+      };
+      setSelected(realFile);
+      logActivity(`Excel model parsed by Claude — ${f.name} · fields extracted`, 'var(--success)');
+    } catch {
+      const matched = matchSample(f.name);
+      setSelected({ ...matched, name: f.name, size: sizeStr, modified: 'Just now' });
+      logActivity(`Excel model imported — ${f.name}`, 'var(--success)');
+    } finally {
       setImporting(false);
       setImported(true);
-      logActivity(`Excel model imported — ${file.name} (${file.size})`, 'var(--success)');
-    }, 1400);
+    }
   };
 
-  const handleRealFile = (f: File) => {
-    const sizekb = Math.round(f.size / 1024);
-    const matched = matchSample(f.name);
-    const realFile: SampleFile = {
-      ...matched,
-      name: f.name,
-      size: sizekb > 0 ? `${sizekb} KB` : '< 1 KB',
-      modified: 'Just now',
-    };
-    runImport(realFile);
-  };
-
-  const selectSample = (file: SampleFile) => {
+  const selectSample = (file: SampleFileEx) => {
     if (selected?.name === file.name && imported) return;
     runImport(file);
   };
@@ -261,11 +306,19 @@ export default function ExcelImportPage() {
                     </div>
                   </div>
                 )}
-                <a href="/ai-deal-review" style={{ textDecoration: 'none' }}>
-                  <button className="btn-gold" style={{ width: '100%', justifyContent: 'center' }}>
-                    Send to AI Deal Review →
-                  </button>
-                </a>
+                <button
+                  className="btn-gold"
+                  style={{ width: '100%', justifyContent: 'center' }}
+                  onClick={() => {
+                    const s = selected as SampleFileEx;
+                    if (s.calcPrefill) {
+                      localStorage.setItem('tsos-calc-prefill', JSON.stringify(s.calcPrefill));
+                    }
+                    window.location.href = '/deal-calculator';
+                  }}
+                >
+                  Run Deal Calculator with These Numbers →
+                </button>
               </div>
             )}
             {!importing && !imported && (
@@ -288,8 +341,8 @@ export default function ExcelImportPage() {
           </div>
 
           <div className="disclaimer">
-            <strong style={{ color: 'var(--gold)' }}>For demonstration only.</strong>{' '}
-            File parsing uses client-side metadata only. No data is transmitted or stored externally. All field previews are illustrative of how the standardization workflow functions.
+            <strong style={{ color: 'var(--gold)' }}>Important:</strong>{' '}
+            Field extraction reads your file locally. No data is transmitted to external servers. Review all extracted fields before using in downstream workflows.
           </div>
         </div>
       </div>

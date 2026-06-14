@@ -1,7 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { logActivity } from '../../lib/activity';
+import { createClient } from '@/lib/supabase/client';
+import { toast } from '@/components/Toast';
 
 type Form = {
   name: string; email: string; phone: string; referralSource: string;
@@ -77,17 +79,74 @@ export default function ClientIntakePage() {
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<IntakeOutput | null>(null);
   const [copied, setCopied] = useState(false);
+  const [savedToPipeline, setSavedToPipeline] = useState(false);
+  const [docParsing, setDocParsing] = useState(false);
+  const [docName, setDocName] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const set = (k: keyof Form, v: string) => setForm((f) => ({ ...f, [k]: v }));
 
-  const handleSubmit = () => {
+  const handleDocUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setDocName(file.name);
+    setDocParsing(true);
+    e.target.value = '';
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/parse-excel', { method: 'POST', body: formData });
+      if (!res.ok) throw new Error();
+      const data = await res.json();
+      setForm((f) => ({
+        ...f,
+        ...(data.prospectName ? { name: data.prospectName } : {}),
+        ...(data.salePrice ? { salePrice: data.salePrice } : {}),
+        ...(data.costBasis ? { basis: data.costBasis } : {}),
+        ...(data.debtPayoff ? { debtPayoff: data.debtPayoff } : {}),
+        ...(data.entityStructure ? { entityStructure: data.entityStructure } : {}),
+      }));
+      toast(`Fields extracted from ${file.name}`);
+      logActivity(`Excel model parsed for intake — ${file.name}`, 'var(--success)');
+    } catch {
+      toast('Could not parse file — fill fields manually', 'error');
+    } finally {
+      setDocParsing(false);
+    }
+  };
+
+  const handleSubmit = async () => {
     const built = buildOutput(form);
     setResult(built);
     setSubmitted(true);
+    toast(form.name ? `Intake submitted — ${form.name}` : 'Intake submitted');
     logActivity(`Client intake processed — ${form.name || 'New prospect'}, ${form.assetType}${form.salePrice ? ' ($' + form.salePrice + ')' : ''}`, 'var(--success)');
+    try {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('pipeline_leads').insert({
+          user_id: user.id,
+          name: form.name || 'Unknown Prospect',
+          company: '',
+          category: form.prospectType || 'Business Owner',
+          location: '',
+          tx_range: form.salePrice ? `$${form.salePrice}` : '',
+          deal_type: form.assetType || '',
+          source: form.referralSource || 'Client Intake',
+          referred_by: '',
+          status: 'New Intake',
+          priority: built.readinessScore.value,
+          next_action: built.nextStep.slice(0, 200),
+          notes: `Email: ${form.email || 'N/A'} | Phone: ${form.phone || 'N/A'} | LOI: ${form.loiSigned} | Concern: ${form.concern || 'N/A'} | Advisors: ${form.advisors || 'N/A'}`,
+          last_contact: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        });
+        setSavedToPipeline(true);
+      }
+    } catch {}
   };
 
-  const reset = () => { setForm(init); setSubmitted(false); setResult(null); };
+  const reset = () => { setForm(init); setSubmitted(false); setResult(null); setSavedToPipeline(false); };
 
   const copyNote = () => {
     if (!result) return;
@@ -108,6 +167,7 @@ export default function ClientIntakePage() {
           </div>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             {submitted && <span className="badge badge-green">Intake Submitted</span>}
+            {savedToPipeline && <span className="badge badge-gold">Saved to Pipeline</span>}
             <span className="internal-tag">Internal Review Only</span>
           </div>
         </div>
@@ -173,14 +233,27 @@ export default function ClientIntakePage() {
             <div><label className="field-label">Desired Liquidity Outcome</label><input className="input-field" placeholder="e.g. reinvest, retire, distribute to family..." value={form.liquidityGoal} onChange={(e) => set('liquidityGoal', e.target.value)} disabled={submitted} /></div>
             <div><label className="field-label">Additional Notes</label><textarea className="input-field" style={{ minHeight: '64px', resize: 'vertical' }} placeholder="Any additional context..." value={form.notes} onChange={(e) => set('notes', e.target.value)} disabled={submitted} /></div>
 
-            {/* Upload placeholder */}
+            {/* Real document upload */}
             <div>
               <label className="field-label">Supporting Documents</label>
-              <div style={{ border: '2px dashed var(--border)', borderRadius: '0.5rem', padding: '1rem', textAlign: 'center', opacity: submitted ? 0.4 : 0.7 }}>
-                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
-                  <span style={{ color: 'var(--gold)', fontWeight: 600 }}>Upload documents</span> — Purchase agreements, tax returns, basis schedules
-                  <br /><span style={{ fontSize: '0.6875rem' }}>PDF, XLSX, DOCX · Demo only — no files processed</span>
-                </div>
+              <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" style={{ display: 'none' }} onChange={handleDocUpload} disabled={submitted} />
+              <div
+                onClick={() => !submitted && fileInputRef.current?.click()}
+                style={{ border: `2px dashed ${docName ? 'var(--gold-border)' : 'var(--border)'}`, borderRadius: '0.5rem', padding: '1rem', textAlign: 'center', cursor: submitted ? 'default' : 'pointer', opacity: submitted ? 0.4 : 1, backgroundColor: docName ? 'var(--gold-bg)' : 'transparent', transition: 'all 0.2s' }}
+              >
+                {docParsing ? (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                    <div className="spinner" style={{ width: '14px', height: '14px', margin: 0 }} />
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Parsing with Claude...</span>
+                  </div>
+                ) : docName ? (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--gold)', fontWeight: 600 }}>✓ {docName} — fields extracted</div>
+                ) : (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                    <span style={{ color: 'var(--gold)', fontWeight: 600 }}>Upload Excel model</span> — auto-extracts name, price, basis, entity
+                    <br /><span style={{ fontSize: '0.6875rem' }}>.xlsx, .xls, .csv · Claude parses and prefills form fields</span>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -261,8 +334,22 @@ export default function ClientIntakePage() {
               </div>
 
               <div style={{ display: 'flex', gap: '0.625rem', flexWrap: 'wrap' }}>
-                <a href="/ai-deal-review" style={{ textDecoration: 'none' }}><button className="btn-gold">Run AI Deal Review →</button></a>
-                <a href="/executive-briefs" style={{ textDecoration: 'none' }}><button className="btn-secondary">Generate Executive Brief</button></a>
+                <button
+                  className="btn-gold"
+                  onClick={() => {
+                    localStorage.setItem('tsos-calc-prefill', JSON.stringify({
+                      prospectName: form.name,
+                      salePrice: form.salePrice,
+                      costBasis: form.basis,
+                      debtPayoff: form.debtPayoff,
+                      entityStructure: form.entityStructure,
+                    }));
+                    window.location.href = '/deal-calculator';
+                  }}
+                >
+                  Run Calculator for This Client →
+                </button>
+                <a href="/ai-deal-review" style={{ textDecoration: 'none' }}><button className="btn-secondary">Run AI Deal Review</button></a>
                 <a href="/meeting-notes" style={{ textDecoration: 'none' }}><button className="btn-secondary">Add Meeting Notes</button></a>
               </div>
             </div>
@@ -282,7 +369,7 @@ export default function ClientIntakePage() {
       </div>
 
       <div className="disclaimer" style={{ marginTop: '1.5rem' }}>
-        <strong style={{ color: 'var(--gold)' }}>For demonstration only.</strong>{' '}
+        <strong style={{ color: 'var(--gold)' }}>Important:</strong>{' '}
         This intake system is a workflow automation tool. It does not provide tax, legal, accounting, investment, or financial advice. All information collected must be reviewed by qualified professionals.
       </div>
     </div>

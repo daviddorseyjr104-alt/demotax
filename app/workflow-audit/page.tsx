@@ -1,19 +1,16 @@
 const workflows = [
-  { process: 'Excel Tax Models', pain: 'Repetitive calculations, version conflicts, manual formatting, hard to share', opportunity: 'Standardized calculator with automated summaries and PDF export', timeSaved: '5–10 hrs/week', priority: 'High', tool: 'AI Deal Review + Excel Import', status: 'Ready to Automate' },
-  { process: 'Client Intake Forms', pain: 'Email-based collection, missing data, inconsistent format per prospect', opportunity: 'Structured intake form with auto-generated summary, gap checklist, and deal readiness score', timeSaved: '3–5 hrs/week', priority: 'High', tool: 'Client Intake Automation', status: 'Automated' },
-  { process: 'PowerPoint Decks', pain: 'Manual deck creation per prospect, reformatting same content repeatedly', opportunity: 'Template-driven 8-slide outline generator from deal inputs with speaker notes', timeSaved: '4–8 hrs/week', priority: 'High', tool: 'PowerPoint Builder', status: 'Automated' },
-  { process: 'Referral Partner Marketing', pain: 'One-off emails per partner, no consistent messaging, no follow-up tracking', opportunity: 'Audience-specific email, LinkedIn, and call script generated in seconds', timeSaved: '3–6 hrs/week', priority: 'High', tool: 'Marketing Studio', status: 'Automated' },
-  { process: 'Executive Brief Generation', pain: 'Manual drafting per client, inconsistent quality, hours per brief', opportunity: 'Input-driven brief generator with situation overview, planning issues, next steps', timeSaved: '3–5 hrs/brief', priority: 'High', tool: 'Executive Briefs Module', status: 'Automated' },
-  { process: 'Meeting Notes → Follow-Up', pain: 'Manual post-call documentation, missed action items, delayed follow-ups', opportunity: 'Rough notes → summary, concerns, action items, follow-up email, CRM task', timeSaved: '1–2 hrs/call', priority: 'High', tool: 'Meeting Notes Automation', status: 'Automated' },
-  { process: 'Lead Research', pain: 'Manual LinkedIn browsing, notes in spreadsheets, no centralized view', opportunity: 'Centralized pipeline with search, filter, priority scoring, and next actions', timeSaved: '4–6 hrs/week', priority: 'High', tool: 'Referral Pipeline module', status: 'Automated' },
-  { process: 'Investment Banker Outreach', pain: 'Generic emails, no tailored messaging for IB context, low response rates', opportunity: 'IB-specific email suite with referral partnership framing and sophisticated tone', timeSaved: '2–4 hrs/week', priority: 'High', tool: 'Marketing Studio — IB template', status: 'Ready to Automate' },
-  { process: 'Broker Relationship Management', pain: 'Inconsistent touchpoints, no educational content library for brokers', opportunity: 'Broker-specific educational email and webinar invite templates on demand', timeSaved: '2–3 hrs/week', priority: 'Medium', tool: 'Marketing Studio — Broker template', status: 'Ready to Automate' },
-  { process: 'CRM Follow-Ups', pain: 'Manual reminders, missed touchpoints, no pipeline stage visibility', opportunity: 'Automated follow-up scheduling tied to pipeline stages and CRM notes', timeSaved: '2–4 hrs/week', priority: 'Medium', tool: 'CRM workflow automation', status: 'Partially Automated' },
-  { process: 'Document Organization', pain: 'Files scattered across email, drives, local folders, no naming convention', opportunity: 'Standardized deal folders, auto-labeling, file-linked deal records', timeSaved: '1–3 hrs/week', priority: 'Medium', tool: 'Document management + structure', status: 'Manual' },
-  { process: 'Educational Content', pain: 'Ad hoc writing, no reusable library for referral education', opportunity: 'Audience-specific educational templates for nurture and webinar sequences', timeSaved: '2–4 hrs/week', priority: 'Medium', tool: 'Marketing Studio + content library', status: 'Partially Automated' },
-  { process: 'Webinar Follow-Ups', pain: 'Manual post-webinar outreach, inconsistent follow-up cadence', opportunity: 'Automated post-event email sequence with personalized next-step offers', timeSaved: '2–3 hrs/event', priority: 'Medium', tool: 'Marketing automation + CRM', status: 'Manual' },
-  { process: 'Referral Tracking', pain: 'No formal system for tracking who referred whom and deal outcomes', opportunity: 'Referral attribution module with partner dashboard and deal linkage', timeSaved: '1–2 hrs/week', priority: 'Medium', tool: 'Referral Pipeline module', status: 'Partially Automated' },
-  { process: 'Compliance Disclaimers', pain: 'Manually added to each document, prone to omission or outdated language', opportunity: 'Standardized disclaimer library auto-appended to all output documents', timeSaved: '30 min/week', priority: 'Low', tool: 'Template disclaimer injection', status: 'Automated' },
+  { process: 'Zoom Call → Calculator', pain: 'After a 15-min call, manually transcribe notes, open the right Excel file (5 different models), re-enter all data', opportunity: 'Zoom transcript auto-extracts the 6–7 key fields and pre-fills the correct asset structure calculator — no re-entry', timeSaved: '45–60 min/call', priority: 'High', tool: 'Meeting Notes + Deal Calculator (Phase 2)', status: 'Ready to Automate' },
+  { process: 'Presentation Prep (5 structures)', pain: '5 different Excel calculators and PowerPoint templates — each manually updated and formatted per deal', opportunity: 'Structure-specific calculator auto-generates the right executive summary and feeds directly into the matching PowerPoint template', timeSaved: '5+ hrs → under 1 hr/deck', priority: 'High', tool: 'Deal Calculator + PowerPoint Builder', status: 'Automated' },
+  { process: 'Banker One-Page Summary', pain: 'After each call, manually write and email a one-page summary to the referring banker — often delayed or skipped', opportunity: 'Print Banker One-Pager button generates a formatted, print-ready summary from calculator inputs in seconds', timeSaved: '30–60 min/deal', priority: 'High', tool: 'Deal Calculator → Print One-Pager', status: 'Automated' },
+  { process: 'Client Intake & Triage', pain: 'Unstructured phone call → manual notes → email back-and-forth to fill in gaps before analysis can begin', opportunity: 'Structured intake form captures all 7 critical fields, scores deal readiness, and flows directly into the Deal Calculator', timeSaved: '1–2 hrs/prospect', priority: 'High', tool: 'Client Intake Automation', status: 'Automated' },
+  { process: 'Post-Call Documentation', pain: 'Manual post-call notes, missed action items, follow-up emails written from scratch, CRM entry done later or never', opportunity: 'Rough call notes → clean summary, action items, follow-up email draft, and CRM task in under 2 minutes', timeSaved: '45–90 min/call', priority: 'High', tool: 'Meeting Notes Automation', status: 'Automated' },
+  { process: 'Executive Memos & Briefs', pain: 'Each brief drafted manually from scratch — 2–4 hours per client for a polished situation overview and next steps', opportunity: 'Structured input → 5-section executive brief with situation overview, key planning issues, discovery questions, and next steps', timeSaved: '2–4 hrs/brief', priority: 'High', tool: 'Executive Briefs Module', status: 'Automated' },
+  { process: 'Intermediary Education Materials', pain: '1/3 of weekly time spent developing training materials, educational notes, and webinar content for bankers and brokers', opportunity: 'Audience-specific educational email, LinkedIn post, call script, and follow-up generated in seconds — reusable across 2,000 contacts', timeSaved: '3–5 hrs/campaign', priority: 'High', tool: 'Referral Outreach Studio', status: 'Partially Automated' },
+  { process: '40-Case Pipeline Tracking', pain: 'Manually tracking 40 open cases across calls, emails, and HubSpot — unclear which cases need attention today', opportunity: 'Searchable pipeline with priority scoring, next-action labels, deal stage tracking, and one-click launch of Calculator, Briefs, Emails, and PPT for any contact', timeSaved: '2–4 hrs/week', priority: 'High', tool: 'Referral Pipeline module', status: 'Automated' },
+  { process: 'HubSpot CRM Sync', pain: 'Marketing and drip outreach run in HubSpot — but platform-generated outputs (memos, summaries) are not connected to HubSpot contacts', opportunity: 'Deal Calculator and Meeting Notes push notes, tasks, and deal stage updates to HubSpot contact records automatically via Private App API', timeSaved: '1–2 hrs/week', priority: 'Medium', tool: 'HubSpot Private App API — sync-deal + sync-meeting routes', status: 'Automated' },
+  { process: 'Zoom Recording → Client File', pain: 'Zoom call recordings exist but are not linked to the client file or used to populate the calculator automatically', opportunity: 'Connect Zoom via Server-to-Server OAuth — Meeting Notes auto-lists recent recordings, one click imports the transcript and runs the full follow-up package', timeSaved: '30–45 min/call', priority: 'Medium', tool: 'Zoom Server-to-Server API + Meeting Notes', status: 'Automated' },
+  { process: 'Document Filing & Naming', pain: 'Client documents scattered across email, Google Drive, and local folders — no consistent naming convention or deal structure', opportunity: 'Standardized deal folders per client with auto-labeling: intake form, calculator output, deck, one-pager, meeting notes', timeSaved: '30–60 min/week', priority: 'Medium', tool: 'Document structure template', status: 'Manual' },
+  { process: 'Post-Webinar Follow-Up', pain: 'After educational webinars, follow-up outreach is written one by one or handled inconsistently', opportunity: 'Automated post-webinar email sequence with personalized next-step offers based on audience type', timeSaved: '2–3 hrs/event', priority: 'Low', tool: 'HubSpot drip sequence', status: 'Partially Automated' },
 ];
 
 const priorityBadge: Record<string, string> = { High: 'badge-red', Medium: 'badge-warning', Low: 'badge-gray' };
@@ -25,9 +22,9 @@ const statusBadge: Record<string, { cls: string; color: string }> = {
 };
 
 const top3 = [
-  { title: 'Excel Model Standardization', detail: 'Converts repetitive calculation workflows into a structured deal review tool. Highest time save per use.', time: '5–10 hrs/week', status: 'Ready to Automate' },
-  { title: 'Executive Brief Generation', detail: 'Replaces hours of manual drafting with a structured input → polished output workflow per client.', time: '3–5 hrs/brief', status: 'Automated' },
-  { title: 'Referral Partner Outreach', detail: 'Produces high-quality, audience-specific emails, LinkedIn messages, and call scripts in seconds.', time: '3–6 hrs/week', status: 'Automated' },
+  { title: 'Presentation Prep (5 Deal Structures)', detail: 'The right calculator auto-feeds the right PowerPoint template. Presentation prep went from 6 hours to under 1 hour per deal — already partially realized.', time: '5 hrs → under 1 hr/deck', status: 'Automated' },
+  { title: 'Zoom Call → One-Pager to Banker', detail: 'Zoom transcript pre-fills the 6–7 fields, calculator runs, and the banker one-pager prints in seconds. The entire post-call workflow becomes one button.', time: '45–60 min/call', status: 'Ready to Automate' },
+  { title: 'Post-Call Documentation', detail: 'Rough call notes become a clean summary, action list, follow-up email, and CRM task — replacing 45–90 minutes of manual post-call admin per conversation.', time: '45–90 min/call', status: 'Automated' },
 ];
 
 export default function WorkflowAuditPage() {
@@ -74,15 +71,17 @@ export default function WorkflowAuditPage() {
         </div>
         <div style={{ width: '1px', height: '40px', backgroundColor: 'var(--border)' }} />
         <div>
-          <div className="stat-label" style={{ marginBottom: '0.25rem' }}>Processes Audited</div>
-          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--text-primary)' }}>{workflows.length}</div>
+          <div className="stat-label" style={{ marginBottom: '0.25rem' }}>Biggest Single Gain</div>
+          <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--text-primary)' }}>5 hrs → &lt;1</div>
+          <div style={{ fontSize: '0.6625rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>Presentation prep, per deck</div>
         </div>
         <div style={{ width: '1px', height: '40px', backgroundColor: 'var(--border)' }} />
         <div>
-          <div className="stat-label" style={{ marginBottom: '0.25rem' }}>High Priority Processes</div>
+          <div className="stat-label" style={{ marginBottom: '0.25rem' }}>High Priority</div>
           <div style={{ fontSize: '1.625rem', fontWeight: 800, color: 'var(--red)' }}>{workflows.filter((w) => w.priority === 'High').length}</div>
+          <div style={{ fontSize: '0.6625rem', color: 'var(--text-muted)', marginTop: '0.25rem' }}>of {workflows.length} processes</div>
         </div>
-        <span className="badge badge-gold" style={{ marginLeft: 'auto' }}>Illustrative Estimates</span>
+        <span className="badge badge-gold" style={{ marginLeft: 'auto' }}>Internal Estimates</span>
       </div>
 
       {/* Top 3 */}

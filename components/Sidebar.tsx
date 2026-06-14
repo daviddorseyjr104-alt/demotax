@@ -2,6 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { createClient } from '@/lib/supabase/client';
 
 type NavItem = { label: string; href: string; icon: React.ReactNode };
 
@@ -15,6 +17,11 @@ const nav: NavItem[] = [
     label: 'AI Deal Review',
     href: '/ai-deal-review',
     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>,
+  },
+  {
+    label: 'Deal Calculator',
+    href: '/deal-calculator',
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/><line x1="8" y1="18" x2="12" y2="18"/></svg>,
   },
   {
     label: 'Excel Import',
@@ -32,9 +39,9 @@ const nav: NavItem[] = [
     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
   },
   {
-    label: 'Marketing Studio',
+    label: 'Referral Outreach',
     href: '/marketing-studio',
-    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>,
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.41 2 2 0 0 1 3.6 1.21h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.08 6.08l1.15-1.15a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
   },
   {
     label: 'Referral Pipeline',
@@ -61,10 +68,29 @@ const nav: NavItem[] = [
     href: '/automation-roadmap',
     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="22" y1="12" x2="2" y2="12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/><line x1="6" y1="16" x2="6.01" y2="16"/><line x1="10" y1="16" x2="10.01" y2="16"/></svg>,
   },
+  {
+    label: 'Website Calculator',
+    href: '/website-calculator',
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>,
+  },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const [leadCount, setLeadCount] = useState<number | null>(null);
+
+  useEffect(() => {
+    async function loadCount() {
+      try {
+        const supabase = createClient();
+        const { count } = await supabase
+          .from('pipeline_leads')
+          .select('*', { count: 'exact', head: true });
+        if (count != null) setLeadCount(count);
+      } catch {}
+    }
+    loadCount();
+  }, []);
 
   return (
     <aside style={{
@@ -106,6 +132,14 @@ export default function Sidebar() {
               <Link key={item.href} href={item.href} className={`sidebar-link${isActive ? ' active' : ''}`}>
                 <span style={{ opacity: isActive ? 1 : 0.65, flexShrink: 0 }}>{item.icon}</span>
                 <span style={{ fontSize: '0.78rem' }}>{item.label}</span>
+                {item.href === '/referral-pipeline' && leadCount != null && (
+                  <span style={{
+                    marginLeft: 'auto', fontSize: '0.5rem', fontWeight: 700,
+                    color: 'var(--gold)', background: 'var(--gold-bg)',
+                    border: '1px solid var(--gold-border)', borderRadius: '9999px',
+                    padding: '0.1rem 0.375rem', lineHeight: 1.3, flexShrink: 0,
+                  }}>{leadCount}</span>
+                )}
               </Link>
             );
           })}
@@ -120,9 +154,9 @@ export default function Sidebar() {
           background: 'var(--gold-bg)', border: '1px solid var(--gold-border)',
           borderRadius: '4px', padding: '0.25rem 0.5rem', marginBottom: '0.5rem',
           display: 'inline-block',
-        }}>Demo Environment</div>
+        }}>Internal Use Only</div>
         <div style={{ fontSize: '0.6125rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>
-          Internal review only. Not tax or legal advice.
+          Not tax, legal, or financial advice.
         </div>
       </div>
     </aside>

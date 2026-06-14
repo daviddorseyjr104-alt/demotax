@@ -34,3 +34,11 @@ export function getStat(key: string, seed: number): number {
     return stored !== null ? seed + parseInt(stored) : seed;
   } catch { return seed; }
 }
+
+export function clearActivity(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.removeItem(ACTIVITY_KEY);
+    ['memos', 'decks', 'briefs'].forEach((k) => localStorage.removeItem(`${STAT_PREFIX}${k}`));
+  } catch {}
+}

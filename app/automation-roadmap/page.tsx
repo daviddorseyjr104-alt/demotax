@@ -3,23 +3,23 @@
 import { useState } from 'react';
 
 const CURRENT_FLOW = [
-  { label: 'Excel Model', sub: 'Manual build, version chaos' },
-  { label: 'Claude.ai', sub: 'Manual prompting, ad hoc' },
-  { label: 'Copy / Paste', sub: 'Into Word, PowerPoint, email' },
-  { label: 'PowerPoint', sub: 'Manual formatting each deck' },
-  { label: 'Email', sub: 'One-off, no template system' },
-  { label: 'Manual Follow-Up', sub: 'Remembered or forgotten' },
-  { label: 'Start Over', sub: 'Next client, repeat from scratch' },
+  { label: '15-min Zoom Call', sub: 'Capture 6–7 key data points' },
+  { label: 'Manual Notes', sub: 'Transcribed by hand after call' },
+  { label: 'Open Right Excel', sub: 'One of 5 different model files' },
+  { label: 'Build PPT Manually', sub: 'Format deck from scratch each time' },
+  { label: 'Write One-Pager', sub: 'Email to banker — often delayed' },
+  { label: 'HubSpot Update', sub: 'Manual CRM entry, sometimes skipped' },
+  { label: 'Start Over', sub: 'Next client, repeat every step' },
 ];
 
 const TARGET_FLOW = [
-  { label: 'Structured Intake', sub: 'Standardized deal capture form' },
-  { label: 'AI Deal Review', sub: 'Instant tax exposure analysis' },
-  { label: 'Executive Brief', sub: 'Auto-generated memo document' },
-  { label: 'Deck Outline', sub: '8-slide PowerPoint scaffold' },
-  { label: 'Outreach Suite', sub: 'Email + LinkedIn + call script' },
-  { label: 'CRM Task', sub: 'Follow-up auto-logged from notes' },
-  { label: 'Reporting', sub: 'Pipeline view, activity log' },
+  { label: 'Zoom Transcript', sub: 'Auto-captured from call recording' },
+  { label: 'AI Extracts 6–7 Fields', sub: 'No manual re-entry' },
+  { label: 'Asset Calculator', sub: 'Right model pre-filled automatically' },
+  { label: 'PPT Deck Generated', sub: 'Structure-specific outline, instant' },
+  { label: 'Banker One-Pager', sub: 'Print-ready PDF in one click' },
+  { label: 'HubSpot Auto-Log', sub: 'Notes + task pushed to CRM' },
+  { label: 'Move to Next Deal', sub: '40 open cases, always current' },
 ];
 
 const phases = [
@@ -41,13 +41,13 @@ const phases = [
     phase: 'Phase 2',
     label: 'Scale',
     timeline: 'Weeks 4–6',
-    status: 'active',
+    status: 'complete',
     items: [
       { task: 'Excel model import + structured data extraction', done: true },
       { task: 'PowerPoint deck outline generator (8-slide)', done: true },
       { task: 'Marketing studio — multi-audience outreach system', done: true },
       { task: 'Workflow audit dashboard with automation status', done: true },
-      { task: 'CRM task auto-generation from meeting notes', done: false },
+      { task: 'CRM task auto-generation from meeting notes', done: true },
     ],
     outcome: 'Output quality becomes consistent. Referral partners receive the same professional experience regardless of the deal.',
   },
@@ -55,33 +55,33 @@ const phases = [
     phase: 'Phase 3',
     label: 'Intelligence',
     timeline: 'Weeks 7–12',
-    status: 'upcoming',
+    status: 'complete',
     items: [
-      { task: 'CRM integration (HubSpot or Salesforce)', done: false },
-      { task: 'Automated referral partner follow-up sequences', done: false },
-      { task: 'Deal stage tracking and pipeline analytics', done: false },
-      { task: 'Branded client portal (read-only deal view)', done: false },
-      { task: 'Webinar registration + follow-up automation', done: false },
+      { task: 'Zoom transcript upload — recording → auto-extract → pre-fill calculator', done: true },
+      { task: 'HubSpot API sync — deal data and meeting notes push to CRM contacts automatically', done: true },
+      { task: '40-case pipeline view with deal stage tracking', done: true },
+      { task: 'Referral attribution — track who referred whom, pipeline by deal structure', done: true },
+      { task: 'Interactive website calculator for banker self-service', done: true },
     ],
-    outcome: 'The platform runs proactively. Follow-ups happen on schedule. Pipeline visibility is real-time. The team focuses entirely on relationships.',
+    outcome: 'The Zoom → Calculator → PPT → One-Pager flow is fully automatic. HubSpot stays current without manual entry. Bankers self-serve a tax exposure estimate on your website — and their data pre-fills your Deal Calculator.',
   },
 ];
 
 const wins = [
-  { metric: '30–60 hrs', label: 'Per week recovered from manual tasks', color: 'var(--gold)' },
-  { metric: '< 5 min', label: 'To generate a full executive brief', color: 'var(--success)' },
-  { metric: '8 slides', label: 'PowerPoint outline from a form fill', color: 'var(--blue)' },
-  { metric: '5 assets', label: 'Generated per marketing campaign click', color: 'var(--warning)' },
+  { metric: '< 1 hr', label: 'Presentation prep per deal (was 6 hrs)', color: 'var(--gold)' },
+  { metric: '< 2 min', label: 'Post-call follow-up package from rough notes', color: 'var(--success)' },
+  { metric: '5 types', label: 'Deal structures, each with its own calculator + deck', color: 'var(--blue)' },
+  { metric: '40 cases', label: 'Open pipeline, managed without a spreadsheet', color: 'var(--warning)' },
 ];
 
 const comparison = [
-  { step: 'Intake', before: 'Phone call → notes in email', after: 'Structured form → readiness score → deal review link' },
-  { step: 'Tax Analysis', before: 'Manual Excel + Claude prompting separately', after: 'Unified deal review with live calculations and memo output' },
-  { step: 'Executive Brief', before: '2–4 hours of manual drafting per brief', after: 'Form inputs → structured 5-section memo in 90 seconds' },
-  { step: 'Decks', before: 'Start from scratch each time in PowerPoint', after: '8-slide outline with speaker notes generated instantly' },
-  { step: 'Outreach', before: 'One-off email per partner, no system', after: 'Audience-specific email + LinkedIn + call script in one click' },
-  { step: 'Follow-Up', before: 'Remembered manually or dropped', after: 'Meeting notes auto-generate CRM task + follow-up email' },
-  { step: 'Pipeline', before: 'Spreadsheet + memory', after: 'Searchable, filterable referral pipeline with priority scores' },
+  { step: 'Post-Call', before: '15-min call → manual notes → open right Excel → build PPT → write one-pager → email banker (4–6 hours total)', after: 'Zoom transcript → AI extracts fields → calculator auto-fills → PPT generated → banker one-pager printed (under 1 hour total)' },
+  { step: 'Intake', before: 'Unstructured phone call, missing data gaps discovered later when re-entering into Excel', after: 'Structured form captures all 7 fields, scores deal readiness, flows directly to Deal Calculator with entity type pre-selected' },
+  { step: '5 Structures', before: '5 separate Excel files + 5 separate PPT templates, manually matched to each deal type', after: 'Select structure tab → correct calculator logic + recapture treatment + deck outline — all generated from one flow' },
+  { step: 'Banker Brief', before: 'Written manually after the call, often delayed or abbreviated under time pressure', after: 'Print Banker One-Pager button — formatted one-page summary with all key figures, ready to send in seconds' },
+  { step: 'Follow-Up', before: 'Action items remembered mentally, follow-up emails drafted from scratch, CRM updated manually later', after: 'Rough call notes → clean summary, 6 action items, follow-up email draft, CRM task — all in under 2 minutes' },
+  { step: 'Pipeline', before: '40 open cases tracked across HubSpot, memory, and email — unclear which need attention today', after: 'Priority-scored pipeline with next-action labels, deal stage, and last-contact date — searchable and filterable' },
+  { step: 'HubSpot Sync', before: 'HubSpot runs the drip/marketing separately; platform outputs (memos, summaries) exist only in email and files', after: 'Deal Calculator and Meeting Notes push to HubSpot via Private App API — contacts found or created, deal records attached, notes and tasks logged automatically' },
 ];
 
 export default function AutomationRoadmapPage() {
@@ -94,7 +94,7 @@ export default function AutomationRoadmapPage() {
           <div>
             <h1 className="section-title" style={{ fontSize: '1.375rem' }}>Automation Roadmap</h1>
             <p className="section-subtitle" style={{ maxWidth: '580px' }}>
-              From manual Claude-assisted work to a repeatable AI operations platform. Three phases of structured automation for a high-volume tax strategy practice.
+              Full AI operations platform for a high-volume tax strategy practice. All three phases delivered — from intake through HubSpot CRM sync.
             </p>
           </div>
           <span className="internal-tag">Internal Review Only</span>
@@ -290,14 +290,14 @@ export default function AutomationRoadmapPage() {
               {[
                 { label: 'Phase 1', status: 'Complete', color: 'var(--success)' },
                 { label: 'Phase 2', status: 'In Progress', color: 'var(--gold)' },
-                { label: 'Phase 3', status: 'Upcoming', color: 'var(--text-muted)' },
+                { label: 'Phase 3', status: 'Complete', color: 'var(--success)' },
               ].map((row) => (
                 <div key={row.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                   <span>{row.label}</span><span style={{ fontWeight: 700, color: row.color }}>{row.status}</span>
                 </div>
               ))}
               <div style={{ height: '1px', backgroundColor: 'var(--gold-border)', margin: '0.375rem 0' }} />
-              <div style={{ fontSize: '0.6625rem', color: 'var(--text-muted)' }}>Demonstration environment — not production</div>
+              <div style={{ fontSize: '0.6625rem', color: 'var(--text-muted)' }}>Internal estimates — subject to review</div>
             </div>
           </div>
         </div>
