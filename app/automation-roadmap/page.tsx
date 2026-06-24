@@ -286,7 +286,7 @@ export default function AutomationRoadmapPage() {
           <div style={{ flex: 1, minWidth: '280px' }}>
             <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--gold)', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '0.625rem' }}>The Core Shift</div>
             <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem', lineHeight: 1.5 }}>
-              From "using Claude manually" to running a professional AI operations platform.
+              From &ldquo;using Claude manually&rdquo; to running a professional AI operations platform.
             </div>
             <div style={{ fontSize: '0.825rem', color: 'var(--text-muted)', lineHeight: 1.7 }}>
               The tools were already there. This platform wraps them in structured workflows — consistent inputs, repeatable outputs, zero rework. Every client gets the same quality experience. Every referral partner receives the same professional follow-through.

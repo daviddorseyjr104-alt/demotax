@@ -1,7 +1,5 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
-
-const client = new Anthropic();
+import { getAnthropic, MODEL, messageText, MissingApiKeyError } from '@/lib/anthropic';
 
 const fmt = (n: number) =>
   new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n);
@@ -9,16 +7,24 @@ const fmt = (n: number) =>
 const pct = (n: number) => `${(n * 100).toFixed(2)}%`;
 
 export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'sk-ant-your-key-here') {
-    return NextResponse.json({ error: 'ANTHROPIC_API_KEY not set in .env.local' }, { status: 500 });
+  let client;
+  try {
+    client = getAnthropic();
+  } catch (e) {
+    if (e instanceof MissingApiKeyError) {
+      return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+    throw e;
   }
 
   const { form, calc } = await req.json();
 
   const dateStr = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+  let message;
+  try {
+    message = await client.messages.create({
+    model: MODEL,
     max_tokens: 4096,
     messages: [{
       role: 'user',
@@ -52,8 +58,10 @@ Write a professional executive memorandum in the style of a senior tax advisory 
 
 Format it as professional plain text with separator lines (────────) between sections. Use the exact figures provided. Total length should be roughly 400–600 words. Write the memo in first-person plural ("we estimate", "our review suggests") as if from the advisory firm.`
     }]
-  });
+    });
+  } catch (e) {
+    return NextResponse.json({ error: `AI request failed: ${(e as Error).message}` }, { status: 502 });
+  }
 
-  const text = message.content[0].type === 'text' ? message.content[0].text : '';
-  return NextResponse.json({ memo: text });
+  return NextResponse.json({ memo: messageText(message) });
 }

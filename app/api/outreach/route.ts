@@ -1,11 +1,15 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
-
-const client = new Anthropic();
+import { getAnthropic, MODEL, messageText, extractJson, MissingApiKeyError } from '@/lib/anthropic';
 
 export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'sk-ant-your-key-here') {
-    return NextResponse.json({ error: 'ANTHROPIC_API_KEY not set in .env.local' }, { status: 500 });
+  let client;
+  try {
+    client = getAnthropic();
+  } catch (e) {
+    if (e instanceof MissingApiKeyError) {
+      return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+    throw e;
   }
 
   const { audience, goal, tone, personalization } = await req.json();
@@ -28,8 +32,10 @@ export async function POST(req: NextRequest) {
     'Family Office': 'managing complex multi-generational wealth where liquidity events trigger significant tax exposure',
   };
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+  let message;
+  try {
+    message = await client.messages.create({
+    model: MODEL,
     max_tokens: 4096,
     messages: [{
       role: 'user',
@@ -57,14 +63,15 @@ Return ONLY valid JSON (no markdown, no explanation):
   "callScript": "Phone opening (first 45–60 seconds). Natural speech — write it as someone would actually say it, not read it. Includes a clear ask for time."
 }`
     }]
-  });
-
-  const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
-  const clean = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
-  try {
-    const data = JSON.parse(clean);
-    return NextResponse.json(data);
-  } catch {
-    return NextResponse.json({ error: 'Claude response could not be parsed', raw: clean.slice(0, 500) }, { status: 500 });
+    });
+  } catch (e) {
+    return NextResponse.json({ error: `AI request failed: ${(e as Error).message}` }, { status: 502 });
   }
+
+  const text = messageText(message);
+  const data = extractJson(text);
+  if (!data) {
+    return NextResponse.json({ error: 'Claude response could not be parsed', raw: text.slice(0, 500) }, { status: 500 });
+  }
+  return NextResponse.json(data);
 }

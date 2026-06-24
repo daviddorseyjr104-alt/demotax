@@ -189,12 +189,14 @@ export default function PowerPointBuilderPage() {
 
   const set = (k: keyof Form, v: string) => { setForm((f) => ({ ...f, [k]: v })); setSlides(null); };
 
+  // One-time prefill from localStorage on mount (SSR-safe only inside an effect).
   useEffect(() => {
     try {
       const raw = localStorage.getItem('tsos-deck-prefill');
       if (raw) {
         const data = JSON.parse(raw) as { prospectName?: string; structure?: string; txSize?: string };
         localStorage.removeItem('tsos-deck-prefill');
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setForm((f) => ({
           ...f,
           ...(data.prospectName ? { prospectName: data.prospectName } : {}),

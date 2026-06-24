@@ -4,9 +4,21 @@ import { NextResponse, type NextRequest } from 'next/server';
 export async function proxy(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const isConfigured = !!supabaseUrl && !!supabaseKey && supabaseUrl !== 'your-project-url';
 
-  // Skip auth if Supabase isn't configured yet
-  if (!supabaseUrl || !supabaseKey || supabaseUrl === 'your-project-url') {
+  if (!isConfigured) {
+    // Local dev convenience: allow through when Supabase isn't set up yet.
+    // In PRODUCTION, fail SAFE — never serve protected pages with auth disabled.
+    // Lock everything except the login/public routes (better stuck than exposed).
+    if (process.env.NODE_ENV === 'production') {
+      const isLoginPage = request.nextUrl.pathname === '/login';
+      const isPublicRoute = request.nextUrl.pathname.startsWith('/website-calculator');
+      if (!isLoginPage && !isPublicRoute) {
+        const url = request.nextUrl.clone();
+        url.pathname = '/login';
+        return NextResponse.redirect(url);
+      }
+    }
     return NextResponse.next();
   }
 

@@ -24,31 +24,19 @@ export default function ConditionalLayout({
   return (
     <>
       <Sidebar />
-      <div style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column' }}>
-        <header style={{
-          height: '52px',
-          borderBottom: '1px solid var(--border)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 2rem',
-          backgroundColor: 'var(--bg-primary)',
-          flexShrink: 0,
-          position: 'sticky',
-          top: 0,
-          zIndex: 10,
-        }}>
+      <div className="app-content">
+        <header className="app-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
             <span style={{ fontSize: '0.6875rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.07em' }}>
               {today}
             </span>
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Not financial or tax advice</span>
+          <div className="app-header-actions">
+            <span className="app-header-advice">Not financial or tax advice</span>
             <UserMenu email={email} />
           </div>
         </header>
-        <main style={{ flex: 1, padding: '2rem' }}>
+        <main className="app-main">
           {children}
         </main>
       </div>

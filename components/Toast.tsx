@@ -42,7 +42,7 @@ export function ToastContainer() {
             display: 'flex', alignItems: 'center', gap: '0.625rem',
             padding: '0.75rem 1rem', borderRadius: '0.625rem',
             backgroundColor: 'var(--bg-card)', border: `1px solid ${c.border}`,
-            boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
+            boxShadow: '0 8px 28px rgba(15,31,61,0.14)',
             fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 500,
             minWidth: '220px', maxWidth: '360px', pointerEvents: 'auto',
           }}>

@@ -192,6 +192,8 @@ export default function MeetingNotesPage() {
     } catch {}
   }, []);
 
+  // Load-on-mount fetch; setState happens after the await, not synchronously.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadHistory(); }, [loadHistory]);
 
   const fetchZoomRecordings = async () => {

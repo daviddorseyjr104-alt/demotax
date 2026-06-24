@@ -1,8 +1,6 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
-
-const client = new Anthropic();
+import { getAnthropic, MODEL, messageText, extractJson } from '@/lib/anthropic';
 
 export async function POST(req: NextRequest) {
   const formData = await req.formData();
@@ -19,19 +17,28 @@ export async function POST(req: NextRequest) {
   const rows = XLSX.utils.sheet_to_csv(sheet);
   const preview = rows.split('\n').slice(0, 60).join('\n');
 
-  if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'sk-ant-your-key-here') {
-    return NextResponse.json({
-      prospectName: file.name.replace(/\.xlsx?$/, '').replace(/-/g, ' '),
-      salePrice: '',
-      costBasis: '',
-      debtPayoff: '',
-      entityStructure: 'LLC (Single Member)',
-      label: file.name.replace(/\.xlsx?$/, ''),
-    });
+  // Fallback (filename-derived fields) if the key is missing OR the AI call fails,
+  // so the import flow always returns something usable.
+  const fallback = {
+    prospectName: file.name.replace(/\.xlsx?$/, '').replace(/-/g, ' '),
+    salePrice: '',
+    costBasis: '',
+    debtPayoff: '',
+    entityStructure: 'LLC (Single Member)',
+    label: file.name.replace(/\.xlsx?$/, ''),
+  };
+
+  let client;
+  try {
+    client = getAnthropic();
+  } catch {
+    return NextResponse.json(fallback);
   }
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+  let message;
+  try {
+    message = await client.messages.create({
+    model: MODEL,
     max_tokens: 512,
     messages: [{
       role: 'user',
@@ -50,14 +57,11 @@ Return ONLY valid JSON with these fields (use empty string "" if a field is not 
   "label": "Short descriptive label for this file/deal (e.g. 'Fitzpatrick — LLC S-Corp Sale')"
 }`
     }]
-  });
-
-  const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
-  const clean = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
-  try {
-    const data = JSON.parse(clean);
-    return NextResponse.json(data);
+    });
   } catch {
-    return NextResponse.json({ prospectName: file.name.replace(/\.xlsx?$/, ''), salePrice: '', costBasis: '', debtPayoff: '', entityStructure: 'LLC (Single Member)', label: file.name });
+    return NextResponse.json(fallback);
   }
+
+  const data = extractJson(messageText(message));
+  return NextResponse.json(data ?? fallback);
 }

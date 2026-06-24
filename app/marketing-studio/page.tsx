@@ -155,12 +155,14 @@ export default function MarketingStudioPage() {
   const [form, setForm] = useState<Form>(init);
   const [generating, setGenerating] = useState(false);
   const [output, setOutput] = useState<Output | null>(null);
+  // One-time prefill from URL params on mount (needs `window`, so an effect).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const name = params.get('name');
     const category = params.get('category');
     if (name || category) {
       const mappedAudience = category ? (categoryToAudience[category] ?? category) : undefined;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm((f) => ({
         ...f,
         ...(name ? { personalization: name } : {}),

@@ -38,7 +38,7 @@ function timeAgo(ts: number): string {
 }
 
 export default function CEODashboard() {
-  const [activity, setActivity] = useState<ActivityEntry[]>([]);
+  const [activity, setActivity] = useState<ActivityEntry[]>(() => getActivity());
   const [leadCount, setLeadCount] = useState<number>(0);
   const [meetingCount, setMeetingCount] = useState<number>(0);
   const [dealCount, setDealCount] = useState<number>(0);
@@ -47,9 +47,6 @@ export default function CEODashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const real = getActivity();
-    setActivity(real);
-
     async function loadLiveData() {
       try {
         const supabase = createClient();
@@ -91,7 +88,7 @@ export default function CEODashboard() {
   ];
 
   return (
-    <div style={{ maxWidth: '1200px' }}>
+    <div className="dashboard-page">
       <div style={{ marginBottom: '2rem' }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem' }}>
           <div>
@@ -105,19 +102,19 @@ export default function CEODashboard() {
       </div>
 
       {/* Live Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.875rem', marginBottom: '1.75rem' }}>
+      <div className="dashboard-stats-grid">
         {stats.map((s) => (
           <div key={s.label} className="card-sm" style={{ borderLeft: `3px solid ${s.color}` }}>
             <div className="stat-label" style={{ marginBottom: '0.5rem' }}>{s.label}</div>
             <div className="stat-value" style={{ fontSize: '1.625rem', color: s.color }}>
-              {loading ? <span style={{ opacity: 0.3 }}>—</span> : s.value}
+              {loading ? <span className="skeleton" style={{ width: '2.5rem', height: '1.625rem', verticalAlign: 'middle' }} /> : s.value}
             </div>
             <div style={{ fontSize: '0.6625rem', color: 'var(--text-muted)', marginTop: '0.375rem' }}>{s.sub}</div>
           </div>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem', marginBottom: '1.25rem' }}>
+      <div className="dashboard-two-column">
         {/* Priority Actions */}
         <div className="card">
           <div style={{ marginBottom: '1.125rem' }}>
@@ -127,7 +124,7 @@ export default function CEODashboard() {
           {dbPriorities.length > 0 ? (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
               {dbPriorities.map(leadToAction).map((p, i) => (
-                <div key={i} style={{ padding: '0.875rem 1rem', backgroundColor: 'var(--bg-input)', border: '1px solid var(--border)', borderRadius: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '1rem' }}>
+                <div key={i} className="priority-action-row">
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.25rem', flexWrap: 'wrap' }}>
                       <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>{p.title}</span>
@@ -159,7 +156,7 @@ export default function CEODashboard() {
 
         {/* Activity Feed */}
         <div className="card">
-          <div style={{ marginBottom: '1.125rem', display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <div className="card-header-row">
             <div>
               <div className="section-title" style={{ fontSize: '1rem' }}>Recent Activity</div>
               <div className="section-subtitle">Platform actions — updates as you use each tool</div>
@@ -206,7 +203,7 @@ export default function CEODashboard() {
           <div className="section-title" style={{ fontSize: '1rem' }}>Manual Work Converted Into Automation</div>
           <div className="section-subtitle">From ad hoc Claude usage to a repeatable operations platform</div>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
+        <div className="dashboard-two-column">
           <div style={{ padding: '1.125rem', backgroundColor: 'var(--bg-input)', borderRadius: '0.625rem', border: '1px solid var(--border)' }}>
             <div style={{ fontSize: '0.6375rem', fontWeight: 700, color: 'var(--red)', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '0.875rem', display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
               <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--red)', display: 'inline-block' }} />Before: Manual Process
@@ -236,7 +233,7 @@ export default function CEODashboard() {
             <div style={{ marginTop: '0.875rem', fontSize: '0.75rem', color: 'var(--text-muted)', lineHeight: 1.55 }}>The Zoom transcript feeds the correct asset calculator automatically. The PowerPoint deck and banker one-pager are ready before the next meeting — under 1 hour total.</div>
           </div>
         </div>
-        <div style={{ marginTop: '1.25rem', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.75rem' }}>
+        <div className="dashboard-impact-grid">
           {[
             { label: 'Presentation Prep', before: '6 hours per deck', after: 'Under 1 hour' },
             { label: 'Post-Call Admin', before: '45 min manual entry', after: 'Auto-generated in minutes' },
@@ -255,7 +252,7 @@ export default function CEODashboard() {
       </div>
 
       {/* Quick links */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem', marginBottom: '1.5rem' }}>
+      <div className="quick-link-grid">
         {[
           { label: 'Deal Calculator', desc: '5 structure types — instant exposure', href: '/deal-calculator' },
           { label: 'Meeting Notes', desc: 'Call notes → follow-up package', href: '/meeting-notes' },

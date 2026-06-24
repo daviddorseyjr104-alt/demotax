@@ -178,6 +178,8 @@ export default function ReferralPipelinePage() {
     }
   }, []);
 
+  // Load-on-mount fetch; setState happens after the await, not synchronously.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => { loadLeads(); }, [loadLeads]);
 
   const saveLead = async (form: FormLead) => {

@@ -14,6 +14,11 @@ const nav: NavItem[] = [
     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>,
   },
   {
+    label: 'Client Hub',
+    href: '/clients',
+    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-3H5a2 2 0 0 0-2 2z"/><circle cx="12" cy="13" r="2.2"/></svg>,
+  },
+  {
     label: 'AI Deal Review',
     href: '/ai-deal-review',
     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>,
@@ -32,11 +37,6 @@ const nav: NavItem[] = [
     label: 'Executive Briefs',
     href: '/executive-briefs',
     icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>,
-  },
-  {
-    label: 'PowerPoint Builder',
-    href: '/powerpoint-builder',
-    icon: <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>,
   },
   {
     label: 'Referral Outreach',
@@ -75,9 +75,17 @@ const nav: NavItem[] = [
   },
 ];
 
+// The core daily-use tools Reg actually runs his day on. Everything else is
+// kept but tucked under "More tools" so the workspace isn't overwhelming.
+const CORE_HREFS = new Set([
+  '/', '/clients', '/deal-calculator', '/meeting-notes',
+  '/referral-pipeline', '/excel-import', '/client-intake',
+]);
+
 export default function Sidebar() {
   const pathname = usePathname();
   const [leadCount, setLeadCount] = useState<number | null>(null);
+  const [showMore, setShowMore] = useState(false);
 
   useEffect(() => {
     async function loadCount() {
@@ -92,14 +100,26 @@ export default function Sidebar() {
     loadCount();
   }, []);
 
+  const renderLink = (item: NavItem) => {
+    const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
+    return (
+      <Link key={item.href} href={item.href} className={`sidebar-link${isActive ? ' active' : ''}`}>
+        <span style={{ opacity: isActive ? 1 : 0.65, flexShrink: 0 }}>{item.icon}</span>
+        <span style={{ fontSize: '0.78rem' }}>{item.label}</span>
+        {item.href === '/referral-pipeline' && leadCount != null && (
+          <span style={{
+            marginLeft: 'auto', fontSize: '0.5rem', fontWeight: 700,
+            color: 'var(--gold)', background: 'var(--gold-bg)',
+            border: '1px solid var(--gold-border)', borderRadius: '9999px',
+            padding: '0.1rem 0.375rem', lineHeight: 1.3, flexShrink: 0,
+          }}>{leadCount}</span>
+        )}
+      </Link>
+    );
+  };
+
   return (
-    <aside style={{
-      width: '210px', minWidth: '210px',
-      backgroundColor: 'var(--sidebar-bg)',
-      borderRight: '1px solid var(--sidebar-border)',
-      display: 'flex', flexDirection: 'column',
-      height: '100vh', position: 'sticky', top: 0, overflowY: 'auto',
-    }}>
+    <aside className="app-sidebar">
       {/* Logo */}
       <div style={{ padding: '1.25rem 1.125rem 1.125rem', borderBottom: '1px solid var(--sidebar-border)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem' }}>
@@ -123,27 +143,33 @@ export default function Sidebar() {
       {/* Nav */}
       <nav style={{ padding: '0.875rem 0.625rem', flex: 1 }}>
         <div style={{ fontSize: '0.575rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.12em', padding: '0 0.375rem', marginBottom: '0.5rem' }}>
-          Platform
+          Daily
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
-          {nav.map((item) => {
-            const isActive = item.href === '/' ? pathname === '/' : pathname.startsWith(item.href);
-            return (
-              <Link key={item.href} href={item.href} className={`sidebar-link${isActive ? ' active' : ''}`}>
-                <span style={{ opacity: isActive ? 1 : 0.65, flexShrink: 0 }}>{item.icon}</span>
-                <span style={{ fontSize: '0.78rem' }}>{item.label}</span>
-                {item.href === '/referral-pipeline' && leadCount != null && (
-                  <span style={{
-                    marginLeft: 'auto', fontSize: '0.5rem', fontWeight: 700,
-                    color: 'var(--gold)', background: 'var(--gold-bg)',
-                    border: '1px solid var(--gold-border)', borderRadius: '9999px',
-                    padding: '0.1rem 0.375rem', lineHeight: 1.3, flexShrink: 0,
-                  }}>{leadCount}</span>
-                )}
-              </Link>
-            );
-          })}
+          {nav.filter((i) => CORE_HREFS.has(i.href)).map((item) => renderLink(item))}
         </div>
+
+        <button
+          onClick={() => setShowMore((s) => !s)}
+          style={{
+            width: '100%', textAlign: 'left', background: 'transparent', border: 'none', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', gap: '0.3rem',
+            fontSize: '0.575rem', fontWeight: 700, color: 'var(--text-muted)',
+            textTransform: 'uppercase', letterSpacing: '0.12em', padding: '0 0.375rem',
+            margin: '1rem 0 0.5rem',
+          }}
+        >
+          More tools
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"
+            style={{ transform: showMore ? 'rotate(90deg)' : 'none', transition: 'transform 0.15s' }}>
+            <polyline points="9 18 15 12 9 6" />
+          </svg>
+        </button>
+        {showMore && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1px' }}>
+            {nav.filter((i) => !CORE_HREFS.has(i.href)).map((item) => renderLink(item))}
+          </div>
+        )}
       </nav>
 
       {/* Footer */}

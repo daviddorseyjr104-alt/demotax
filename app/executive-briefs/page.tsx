@@ -106,11 +106,13 @@ export default function ExecutiveBriefsPage() {
   const [form, setForm] = useState<Form>(init);
   const [generating, setGenerating] = useState(false);
   const [brief, setBrief] = useState<Brief | null>(null);
+  // One-time prefill from URL params on mount (needs `window`, so an effect).
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const name = params.get('name');
     const txValue = params.get('txValue');
     if (name || txValue) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setForm((f) => ({ ...f, ...(name ? { clientName: name } : {}), ...(txValue ? { txValue } : {}) }));
     }
   }, []);

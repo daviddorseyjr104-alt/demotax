@@ -1,9 +1,6 @@
 import type { Metadata } from 'next';
-import { Geist } from 'next/font/google';
 import './globals.css';
 import ConditionalLayout from '@/components/ConditionalLayout';
-
-const geist = Geist({ subsets: ['latin'], variable: '--font-geist-sans' });
 
 export const metadata: Metadata = {
   title: 'Tax Strategy Operations Hub',
@@ -28,7 +25,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const email = await getUser();
 
   return (
-    <html lang="en" className={geist.variable}>
+    <html lang="en">
       <body style={{ display: 'flex', height: '100vh', overflow: 'hidden' }}>
         <ConditionalLayout email={email}>
           {children}

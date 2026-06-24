@@ -1,17 +1,23 @@
-import Anthropic from '@anthropic-ai/sdk';
 import { NextRequest, NextResponse } from 'next/server';
-
-const client = new Anthropic();
+import { getAnthropic, MODEL, messageText, extractJson, MissingApiKeyError } from '@/lib/anthropic';
 
 export async function POST(req: NextRequest) {
-  if (!process.env.ANTHROPIC_API_KEY || process.env.ANTHROPIC_API_KEY === 'sk-ant-your-key-here') {
-    return NextResponse.json({ error: 'ANTHROPIC_API_KEY not set in .env.local' }, { status: 500 });
+  let client;
+  try {
+    client = getAnthropic();
+  } catch (e) {
+    if (e instanceof MissingApiKeyError) {
+      return NextResponse.json({ error: e.message }, { status: 500 });
+    }
+    throw e;
   }
 
   const { notes } = await req.json();
 
-  const message = await client.messages.create({
-    model: 'claude-sonnet-4-6',
+  let message;
+  try {
+    message = await client.messages.create({
+    model: MODEL,
     max_tokens: 4096,
     messages: [{
       role: 'user',
@@ -32,14 +38,15 @@ Return ONLY a valid JSON object with exactly these fields (no markdown, no expla
   "crmTask": "Formatted CRM task entry. Include: Contact name, Company, Date, Status (Call Completed → Follow-Up Pending), Priority (HIGH/MEDIUM/LOW), Deal notes with specific figures from the call (transaction range, basis, entity type, advisor names), and a checkbox action list with 4–5 items."
 }`
     }]
-  });
-
-  const text = message.content[0].type === 'text' ? message.content[0].text : '{}';
-  const clean = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
-  try {
-    const data = JSON.parse(clean);
-    return NextResponse.json(data);
-  } catch {
-    return NextResponse.json({ error: 'Claude response could not be parsed', raw: clean.slice(0, 500) }, { status: 500 });
+    });
+  } catch (e) {
+    return NextResponse.json({ error: `AI request failed: ${(e as Error).message}` }, { status: 502 });
   }
+
+  const text = messageText(message);
+  const data = extractJson(text);
+  if (!data) {
+    return NextResponse.json({ error: 'Claude response could not be parsed', raw: text.slice(0, 500) }, { status: 500 });
+  }
+  return NextResponse.json(data);
 }

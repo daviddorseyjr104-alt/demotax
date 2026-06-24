@@ -199,7 +199,6 @@ function buildCalc(form: Form) {
 export default function DealCalculatorPage() {
   const [form, setForm] = useState<Form>(initialForm);
   const [generated, setGenerated] = useState(false);
-  const hubSpot = 'idle';
   const [dealSaved, setDealSaved] = useState(false);
 
   const set = (k: keyof Form, v: string) => {
@@ -249,6 +248,8 @@ export default function DealCalculatorPage() {
     }
   };
 
+  // One-time prefill from localStorage on mount (can't read in a useState
+  // initializer without an SSR/hydration mismatch — an effect is correct here).
   useEffect(() => {
     try {
       const raw = localStorage.getItem('tsos-calc-prefill');
@@ -263,6 +264,7 @@ export default function DealCalculatorPage() {
           'C-Corporation': 'c-corp',
         };
         const mappedStructure = data.entityStructure ? (structureMap[data.entityStructure] ?? 'llc-partnership') : undefined;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setForm((f) => ({
           ...f,
           ...(data.prospectName ? { prospectName: data.prospectName } : {}),
@@ -279,6 +281,9 @@ export default function DealCalculatorPage() {
 
   const structure = STRUCTURES.find((s) => s.id === form.structure) ?? STRUCTURES[0];
 
+  // buildCalc is a pure module-level fn with `form` its only input — this memo is
+  // correct; the React Compiler rule is conservative here.
+  // eslint-disable-next-line react-hooks/preserve-manual-memoization
   const calc = useMemo(() => buildCalc(form), [form]);
 
   const hasData = calc.salePrice > 0 && calc.grossGain > 0;

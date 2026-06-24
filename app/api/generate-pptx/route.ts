@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import PptxGenJS from 'pptxgenjs';
 
 const GOLD = 'C9A84C';
@@ -6,7 +6,6 @@ const DARK = '0A0F1C';
 const CARD = '1A2332';
 const WHITE = 'F0E8D5';
 const MUTED = '5A6A82';
-const SUCCESS = '34D399';
 
 export async function POST(req: NextRequest) {
   const { slides, form } = await req.json() as {
